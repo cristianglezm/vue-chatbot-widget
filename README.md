@@ -26,7 +26,7 @@ The ChatBotWidget is designed to enhance your web application. It empowers users
 You can install the package from npm.
 
 ```bash
-npm i @cristianglezm/vue-chat-bot-widget
+npm i @cristianglezm/vue-chatbot-widget
 ```
 If you plan to use all the components you will need to initizalize the pinia store and add ChatBotPlugin into the app.
 
