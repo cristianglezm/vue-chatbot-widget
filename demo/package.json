@@ -27,7 +27,7 @@
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^22.14.0",
     "@types/prismjs": "^1.26.5",
-    "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.26.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/eslint-config-prettier": "^10.2.0",
