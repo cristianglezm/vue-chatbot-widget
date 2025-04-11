@@ -1,5 +1,5 @@
 
-# Chat Bot Widget Component Library
+# vue ChatBot Widget
 
 [![cd](https://github.com/cristianglezm/vue-chatbot-widget/actions/workflows/cd.yml/badge.svg?branch=master)](https://github.com/cristianglezm/vue-chatbot-widget/actions/workflows/cd.yml)
 [![pkg](https://github.com/cristianglezm/vue-chatbot-widget/actions/workflows/pkg.yml/badge.svg?branch=master)](https://github.com/cristianglezm/vue-chatbot-widget/actions/workflows/pkg.yml)
