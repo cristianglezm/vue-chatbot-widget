@@ -1,0 +1,26 @@
+
+@font-face{
+  font-family: 'MonaspaceRadon-Regular';
+  src: url('../../src/assets/MonaspaceRadon-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+:root {
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  font-family: MonaspaceRadon-Regular, Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background-color: green;
+  color: lightgreen;
+  scrollbar-color: lightgreen rgb(47, 50, 52);
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: lightgreen;
+    background-color: green;
+  }
+}
