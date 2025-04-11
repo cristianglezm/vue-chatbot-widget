@@ -3,5 +3,5 @@
 set -e
 cd demo
 npm i
-npm run build -- --base=/vue-chatbot-widget/
+npm run buildGH
 cd ..

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "cd .. && npm run build:lib && cd demo && vite",
     "build": "run-p type-check \"build-only {@}\" --",
+    "buildGH": "run-p type-check \"build-only -- --base=/vue-chatbot-widget/\" --",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
