@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@huggingface/inference": "^2.8.1",
-    "@huggingface/jinja": "^0.3.3",
+    "@huggingface/jinja": "^0.3.4",
     "@huggingface/transformers": "^3.4.2",
     "kokoro-js": "^1.2.0",
     "waveform-data": "^4.5.1"
