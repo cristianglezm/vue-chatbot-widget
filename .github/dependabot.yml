@@ -13,7 +13,16 @@ updates:
       - cristianglezm
     assignees:
       - cristianglezm
-      
+
+  - package-ecosystem: "npm"
+    directory: "/demo"
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - cristianglezm
+    assignees:
+      - cristianglezm
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
