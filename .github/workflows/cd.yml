@@ -1,0 +1,23 @@
+name: cd
+on:
+  push:
+    branches:
+      - master
+jobs:
+  ghp:
+    name: cd
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout branch
+        uses: actions/checkout@v4
+      - name: build and deploy
+        shell: bash
+        env:
+            GITUSER: ${{secrets.GITUSER}}
+            EMAIL: ${{secrets.EMAIL}}
+            CHATBOT_WORKER_URL: ${{ secrets.CHATBOT_WORKER_URL }}
+            KOKORO_WORKER_URL: ${{ secrets.KOKORO_WORKER_URL }}
+        run: |
+          bash .devops/build_dist_demo.sh
+          sh .devops/replaceWorkers.sh "$CHATBOT_WORKER_URL" "$KOKORO_WORKER_URL"
+          sh .devops/deploy.sh "$GITUSER" "$EMAIL"
