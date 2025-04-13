@@ -2,7 +2,6 @@
 # package ecosystems to update and where the package manifests are located.
 # Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -13,6 +12,35 @@ updates:
       - cristianglezm
     assignees:
       - cristianglezm
+    open-pull-requests-limit: 6
+    groups:
+      AI:
+        patterns:
+          - "@huggingface/*"
+          - "kokoro-js"
+      misc:
+        patterns:
+          - "waveform-data"
+      dev-typescript:
+        patterns:
+          - "@tsconfig/node22"
+          - "@types/*"
+          - "@typescript-*"
+          - "@vue/tsconfig"
+          - "typescript"
+          - "vue-tsc"
+      dev-vite:
+        patterns:
+          - "@vitejs/plugin-vue"
+          - "vite*"
+      dev-misc:
+        patterns:
+          - "@eslint/js"
+          - "eslint*"
+          - "vue-eslint-parser"
+          - "prettier"
+          - "globals"
+          - "npm-run-all"
 
   - package-ecosystem: "npm"
     directory: "/demo"
@@ -22,6 +50,40 @@ updates:
       - cristianglezm
     assignees:
       - cristianglezm
+    open-pull-requests-limit: 5
+    groups:
+      dependencies:
+        patterns:
+          - "@cristianglezm/*"
+          - "mitt"
+          - "pinia"
+          - "vue"
+          - "primjs"
+      dev-typescript:
+        patterns:
+          - "@tsconfig/node22"
+          - "@types/*"
+          - "@typescript-*"
+          - "@vue/tsconfig"
+          - "typescript"
+          - "vue-tsc"
+      dev-vite:
+        patterns:
+          - "@vitejs/plugin-vue"
+          - "vite-plugin-vue-devtools"
+          - "vite*"
+      dev-misc:
+        patterns:
+          - "@eslint/js"
+          - "eslint*"
+          - "vite-plugin-eslint"
+          - "vue-eslint-parser"
+          - "@vue/eslint-config-prettier"
+          - "@vue/eslint-config-typesccript"
+          - "prettier"
+          - "globals"
+          - "npm-run-all2"
+          - "jiti"
 
   - package-ecosystem: "github-actions"
     directory: "/"
