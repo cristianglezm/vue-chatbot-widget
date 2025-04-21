@@ -9,6 +9,7 @@
     "tool-use"
   ],
   "author": "Cristian Gonzalez",
+  "description":"A simple vue chatbot with tts"
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
