@@ -54,8 +54,8 @@
     "clean": "rm -rf dist && rm -rf demo/dist"
   },
   "dependencies": {
-    "@huggingface/inference": "^3.11.0",
-    "@huggingface/jinja": "^0.4.1",
+    "@huggingface/inference": "^3.12.1",
+    "@huggingface/jinja": "^0.5.0",
     "@huggingface/transformers": "^3.5.1",
     "kokoro-js": "^1.2.1",
     "waveform-data": "^4.5.1"
