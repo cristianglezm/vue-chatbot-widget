@@ -8,8 +8,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    reviewers:
-      - cristianglezm
     assignees:
       - cristianglezm
     open-pull-requests-limit: 6
@@ -46,15 +44,12 @@ updates:
     directory: "/demo"
     schedule:
       interval: "weekly"
-    reviewers:
-      - cristianglezm
     assignees:
       - cristianglezm
     open-pull-requests-limit: 5
     groups:
       dependencies:
         patterns:
-          - "@cristianglezm/*"
           - "mitt"
           - "pinia"
           - "vue"
@@ -89,7 +84,5 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    reviewers:
-      - cristianglezm
     assignees:
       - cristianglezm
