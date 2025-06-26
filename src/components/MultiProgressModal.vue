@@ -100,6 +100,9 @@ const getProgress = (key) => {
 };
 const updateBar = (key) =>{
     let item = data.items.get(key);
+    if(item === undefined){
+        return;
+    }
     let width = ((item.progress / item.total) * 100) + "%"
     const bar = document.getElementById("Bar-" + key);
     if(bar){
@@ -125,18 +128,20 @@ onMounted(() => {
                 break;
             case "update":{
                 let item = data.items.get(e.name);
-                item.progress = e.progress;
-                updateBar(e.name);
-                let done = true;
-                data.items.forEach((item, _, map) => {
-                    if(item.progress != item.total){
-                        done = false;
-                    }else{
-                        map.delete(item.name);
+                if(item !== undefined){
+                    item.progress = e.progress;
+                    updateBar(e.name);
+                    let done = true;
+                    data.items.forEach((item, _, map) => {
+                        if(item.progress != item.total){
+                            done = false;
+                        }else{
+                            map.delete(item.name);
+                        }
+                    });
+                    if(done){
+                        closeModal();
                     }
-                });
-                if(done){
-                    closeModal();
                 }
             }
                 break;
