@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: build and deploy
         shell: bash
         env:
