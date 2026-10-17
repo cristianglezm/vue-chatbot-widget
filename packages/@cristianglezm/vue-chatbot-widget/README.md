@@ -4,7 +4,7 @@
 [![cd](https://github.com/cristianglezm/vue-chatbot-widget/actions/workflows/cd.yml/badge.svg?branch=master)](https://github.com/cristianglezm/vue-chatbot-widget/actions/workflows/cd.yml)
 [![pkg](https://github.com/cristianglezm/vue-chatbot-widget/actions/workflows/pkg.yml/badge.svg?branch=master)](https://github.com/cristianglezm/vue-chatbot-widget/actions/workflows/pkg.yml)
 [![NPM Version](https://img.shields.io/npm/v/%40cristianglezm%2Fvue-chatbot-widget?logo=npm)](https://www.npmjs.com/package/@cristianglezm/vue-chatbot-widget)
-[![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/cristianglezm/vue-chatbot-widget/master?logo=github)](https://github.com/cristianglezm/vue-chatbot-widget/pkgs/npm/vue-chatbot-widget)
+[![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/cristianglezm/vue-chatbot-widget/master?logo=github&filename=packages%2F%40cristianglezm%2Fvue-chatbot-widget%2Fpackage.json)](https://github.com/cristianglezm/vue-chatbot-widget/pkgs/npm/vue-chatbot-widget)
 
 The ChatBotWidget is designed to enhance your web application. It empowers users to specify actions, retrieve information from documents using a basic Retrieval-Augmented Generation (RAG) system, and access text-to-audio features for an improved and inclusive user experience. 
 

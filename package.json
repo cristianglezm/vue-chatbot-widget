@@ -1,0 +1,53 @@
+{
+  "name": "vue-chatbot-widget-demo",
+  "version": "0.0.8",
+  "private": true,
+  "description": "Demo website for the vue-chatbot-widget",
+  "author": "Cristian Gonzalez <cristian.glez.m@gmail.com>",
+  "license": "Apache-2.0",
+  "type": "module",
+  "workspaces": [
+    "packages/@cristianglezm/vue-chatbot-widget"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "dev:widget": "npm run watch -w @cristianglezm/vue-chatbot-widget",
+    "build:widget": "npm run build -w @cristianglezm/vue-chatbot-widget",
+    "build": "npm run build:widget && npm run type-check && vite build",
+    "buildGH": "npm run build:widget && npm run type-check && vite build --base=/vue-chatbot-widget/",
+    "type-check": "vue-tsc --build",
+    "preview": "vite preview",
+    "lint": "eslint . --fix",
+    "lint:widget": "npm run lint -w @cristianglezm/vue-chatbot-widget",
+    "format": "prettier --write src/",
+    "clean": "rm -rf dist && npm run clean -w @cristianglezm/vue-chatbot-widget"
+  },
+  "dependencies": {
+    "@cristianglezm/vue-chatbot-widget": "workspace:*",
+    "mitt": "^3.0.1",
+    "pinia": "^3.0.3",
+    "prismjs": "^1.30.0",
+    "vue": "^3.5.18"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "^22.0.2",
+    "@types/node": "^24.2.1",
+    "@types/prismjs": "^1.26.5",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.6.0",
+    "@vue/tsconfig": "^0.7.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-vue": "^10.4.0",
+    "globals": "^16.3.0",
+    "jiti": "^2.5.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.1",
+    "vite-plugin-eslint": "^1.8.1",
+    "vite-plugin-vue-devtools": "^8.0.0",
+    "vue-tsc": "^3.0.5"
+  }
+}
