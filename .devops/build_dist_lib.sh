@@ -1,5 +1,5 @@
-#/bin/bash
+#!/bin/bash
 
-set -e
-npm i
-npm run build:lib
+set -euo pipefail
+
+npm run build:widget
