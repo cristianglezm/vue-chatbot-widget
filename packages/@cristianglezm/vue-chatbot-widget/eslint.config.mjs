@@ -44,7 +44,6 @@ export default [
         rules: {
             'vue/singleline-html-element-content-newline': 'off',
             'vue/max-attributes-per-line': 'off',
-            'vue/script-setup-uses-vars': 'error',
             'vue/multi-word-component-names': 'off',
             'vue/attribute-hyphenation': 'off',
             'no-unused-vars': 'off',
