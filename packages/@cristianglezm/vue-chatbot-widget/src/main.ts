@@ -16,8 +16,8 @@ import { useErrorStore } from './stores/ErrorStore';
 import { useKokoroStore } from './stores/KokoroStore';
 import { useVectorStore } from './stores/vectorStore';
 
-import ChatBotWorker from '@cristianglezm/vue-chatbot-widget/workers/chatbot.worker?worker';
-import KokoroWorker from '@cristianglezm/vue-chatbot-widget/workers/kokoro.worker?worker';
+import ChatBotWorker from './workers/chatbot.worker?worker';
+import KokoroWorker from './workers/kokoro.worker?worker';
 
 export {
   ChatBotWidget,
