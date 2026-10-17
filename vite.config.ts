@@ -3,7 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
-// @ts-ignore
+// @ts-expect-error vite-plugin-eslint ships no types for ESM
 import eslint from 'vite-plugin-eslint';
 
 const widgetSrc = path.resolve(__dirname, 'packages/@cristianglezm/vue-chatbot-widget/src/main.ts');

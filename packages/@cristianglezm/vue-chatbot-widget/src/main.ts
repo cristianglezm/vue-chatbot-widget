@@ -50,13 +50,13 @@ export const initStores = (options: ChatBotPluginOptions ) => {
             options.pinia = createPinia();
         }
         // @ts-ignore
-        const ErrorStore = useErrorStore(options.pinia);
+        useErrorStore(options.pinia);
         // @ts-ignore
-        const ChatBotStore = useChatBotStore(options.pinia);
+        useChatBotStore(options.pinia);
         // @ts-ignore
-        const VectorStore = useVectorStore(options.pinia);
+        useVectorStore(options.pinia);
         // @ts-ignore
-        const KokoroStore = useKokoroStore(options.pinia);
+        useKokoroStore(options.pinia);
 };
 const ChatBotPlugin = {
     install(app: any, options: ChatBotPluginOptions ){
