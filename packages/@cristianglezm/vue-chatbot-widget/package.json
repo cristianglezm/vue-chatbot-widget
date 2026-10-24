@@ -63,7 +63,7 @@
   },
   "peerDependencies": {
     "mitt": "^3.0.0",
-    "pinia": "^3.0.0",
+    "pinia": "^3.0.0 || ^4.0.0",
     "vue": "^3.0.0"
   },
   "devDependencies": {
