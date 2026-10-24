@@ -12,7 +12,9 @@ export default defineConfig(({ command }) => ({
   plugins: [
     vue(),
     vueDevTools(),
-    eslint()
+    // eslint 10 looks for the config next to each linted file: the built widget (a workspace link, not in node_modules)
+    // would be linted with the package's config. The root config ignores packages/ and dist/, the plugin does the same.
+    eslint({ exclude: ['**/node_modules/**', '**/packages/**', '**/dist/**'] })
   ],
   resolve: {
     alias: [
