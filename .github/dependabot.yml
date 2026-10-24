@@ -16,6 +16,10 @@ updates:
       # Migrate by hand after the investigation (plan, section 12), then remove this.
       - dependency-name: "@huggingface/transformers"
         update-types: ["version-update:semver-major"]
+      # 5.x bundles the declarations with `__VLS_*` helper names that are not declared (SwitchPanel's slots):
+      # consumers get a main.d.ts that does not compile. 4.5.4 emits valid declarations with vite 8.
+      - dependency-name: "vite-plugin-dts"
+        update-types: ["version-update:semver-major"]
     groups:
       AI:
         patterns:
