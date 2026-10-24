@@ -16,7 +16,7 @@
     </div>
     <div id="chatbot-device-option" class="option-box labelInputArea">
       <ToolTip :info="'where to run the model'" />
-      <label for="chatbot-device"> Device: </label>
+      <label for="chatbot-device-cpu"> Device: </label>
       <input id="chatbot-device-cpu" v-model="data.modelOptions.device" type="radio" name="chatbot-device" value="CPU" @change="onChange()"> CPU
       <input id="chatbot-device-gpu" v-model="data.modelOptions.device" type="radio" name="chatbot-device" :disabled="isGPUAvailable() === false" value="GPU" @change="onChange()"> GPU
     </div>
@@ -106,7 +106,7 @@
     if(isModelLoaded()){
       return;
     }
-    emitter.emit("ChatBotWidget#loadChatBotModel");
+    emitter.emit("ChatBotWidget#loadChatBotModel", { force: data.forceReload });
     data.forceReload = false;
   }
   const hasModelOptionsChanged = () => {
@@ -136,28 +136,30 @@
       data.openCache = true;
     }
   }
+  // the handlers are named so onUnmounted removes only these, `off(type)` would remove everybody's
+  const onUpdateBtnTitle = () => {
+    nextTick(() => {
+      reloadCache();
+      setCorrectBtnTitle();
+    });
+  };
+  const onForceReload = () => {
+    data.forceReload = true;
+  };
+  let titleTimer = null;
   onMounted(() => {
     ChatBotStore.saveModelOptions();
-    setTimeout(() => {
-      if(isModelDownloaded()){
-        data.btnTitle = "Load Model";
-      }else{
-        data.btnTitle = "Download Model";
-      }
+    titleTimer = setTimeout(() => {
+      titleTimer = null;
+      data.btnTitle = isModelDownloaded() ? "Load Model" : "Download Model";
     }, 500);
-    emitter.on('ChatBotModelOptions#updateBtnTitle', () => {
-      nextTick(() => {
-        reloadCache();
-        setCorrectBtnTitle();
-      });
-    });
-    emitter.on('modelOptions#forceReload', () => {
-      data.forceReload = true;
-    });
+    emitter.on('ChatBotModelOptions#updateBtnTitle', onUpdateBtnTitle);
+    emitter.on('modelOptions#forceReload', onForceReload);
   });
   onUnmounted(() => {
-    emitter.off('ChatBotModelOptions#updateBtnTitle');
-    emitter.off('modelOptions#forceReload');
+    clearTimeout(titleTimer);
+    emitter.off('ChatBotModelOptions#updateBtnTitle', onUpdateBtnTitle);
+    emitter.off('modelOptions#forceReload', onForceReload);
   });
 </script>
 

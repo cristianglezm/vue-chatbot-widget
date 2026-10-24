@@ -21,7 +21,10 @@
     "lint:widget": "npm run lint -w @cristianglezm/vue-chatbot-widget",
     "test:widget": "npm run test -w @cristianglezm/vue-chatbot-widget",
     "format": "prettier --write src/",
-    "clean": "rm -rf dist && npm run clean -w @cristianglezm/vue-chatbot-widget"
+    "clean": "rm -rf dist && npm run clean -w @cristianglezm/vue-chatbot-widget",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "show": "playwright show-report"
   },
   "dependencies": {
     "@cristianglezm/vue-chatbot-widget": "workspace:*",
@@ -31,6 +34,7 @@
     "vue": "^3.5.18"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^24.2.1",
     "@types/prismjs": "^1.26.5",

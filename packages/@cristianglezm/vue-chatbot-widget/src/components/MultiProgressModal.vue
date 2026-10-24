@@ -6,7 +6,7 @@
       </div>
       <div v-if="data.items.size">
         <div v-for="[key, item] of data.items" :key="key" role="region" :aria-labelledby="'progress-title-' + item.name">
-          <h2 id="'progress-title-' + item.name"> {{ item.name }} </h2>
+          <h2 :id="'progress-title-' + item.name"> {{ item.name }} </h2>
           <div :id="'multiProgress-bar-' + item.name" class="bar-background" role="progressbar" :aria-valuenow="getProgress(item.name)" :aria-valuemin="0" :aria-valuemax="item.total" :aria-labelledby="'progress-title-' + item.name">
             <div :id="'Bar-' + item.name" />
           </div>
@@ -67,12 +67,16 @@
  *    name: 'Task 2',
  *    progress: 50, // Update the progress for Task 2
  * });
- * // the modal closes itself when all tasks are completed.
+ * // the modal closes itself shortly after all the tasks are completed, unless a new task is initialized meanwhile
+ * // (a loader can start its biggest file after the small ones are done).
  * emitter.emit('showMultiProgress', {
  *    status: 'update',
  *    name: 'Task 1',
  *    progress: 100, // Final progress value for Task 1
  * });
+ *
+ * // or close it right away when the work is over, whatever is still pending (also after an error).
+ * emitter.emit('showMultiProgress', { status: 'finish' });
  */
 import { reactive, onMounted, onBeforeUnmount } from 'vue';
 
@@ -90,13 +94,24 @@ const props = defineProps({
         required: true
     }
 });
+// how long to wait before closing when everything known is done, a new `init` cancels it.
+const CLOSE_DELAY_MS = 750;
+let closeTimer = null;
+const cancelClose = () => {
+    clearTimeout(closeTimer);
+    closeTimer = null;
+};
+const scheduleClose = () => {
+    cancelClose();
+    closeTimer = setTimeout(closeModal, CLOSE_DELAY_MS);
+};
 const data = reactive({
     title: "loading title..",
     items: new Map()
 });
 
 const getProgress = (key) => {
-    return data.items.get(key).progress;
+    return data.items.get(key)?.progress ?? 0;
 };
 const updateBar = (key) =>{
     let item = data.items.get(key);
@@ -110,56 +125,73 @@ const updateBar = (key) =>{
     }
 };
 
+const onEvent = (e) => {
+    switch(e.status){
+        case "setup":{
+            cancelClose();
+            data.items = new Map();
+            data.title = e.title;
+            openModal();
+            e.onLoad();
+        }
+            break;
+        case "init":{
+            cancelClose();
+            data.items.set(e.name, e);
+            updateBar(e.name);
+        }
+            break;
+        case "update":{
+            let item = data.items.get(e.name);
+            if(item !== undefined){
+                item.progress = e.progress;
+                updateBar(e.name);
+                let done = true;
+                data.items.forEach((item, _, map) => {
+                    if(item.progress != item.total){
+                        done = false;
+                    }else{
+                        map.delete(item.name);
+                    }
+                });
+                if(done){
+                    scheduleClose();
+                }else{
+                    cancelClose();
+                }
+            }
+        }
+            break;
+        case "finish":{
+            cancelClose();
+            data.items = new Map();
+            closeModal();
+        }
+            break;
+    }
+};
+
 onMounted(() => {
     data.items = new Map();
     data.dialog = document.getElementById(props.id);
-    props.channel.on(props.on, (e) => {
-        switch(e.status){
-            case "setup":{
-                data.title = e.title;
-                openModal();
-                e.onLoad();
-            }
-                break;
-            case "init":{
-                data.items.set(e.name, e);
-                updateBar(e.name);
-            }
-                break;
-            case "update":{
-                let item = data.items.get(e.name);
-                if(item !== undefined){
-                    item.progress = e.progress;
-                    updateBar(e.name);
-                    let done = true;
-                    data.items.forEach((item, _, map) => {
-                        if(item.progress != item.total){
-                            done = false;
-                        }else{
-                            map.delete(item.name);
-                        }
-                    });
-                    if(done){
-                        closeModal();
-                    }
-                }
-            }
-                break;
-        }
-    });
+    props.channel.on(props.on, onEvent);
 });
 
 onBeforeUnmount(() => {
-    props.channel.off(props.on);
+    cancelClose();
+    props.channel.off(props.on, onEvent);
 });
 
 const openModal = () => {
     data.dialog.showModal();
 };
 
-const closeModal = () => {
-    data.dialog.close();
-};
+function closeModal(){
+    closeTimer = null;
+    if(data.dialog?.open){
+        data.dialog.close();
+    }
+}
 
 </script>
 

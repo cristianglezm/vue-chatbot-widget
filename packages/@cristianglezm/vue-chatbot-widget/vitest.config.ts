@@ -13,6 +13,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['tests/**/*.test.{js,ts}'],
+    setupFiles: ['tests/setup.js'],
     restoreMocks: true,
+    // Loading jsdom is most of the time of the run (13 files = 13 jsdoms with isolation). The files share one jsdom
+    // instead; tests/setup.js resets what they could leave behind, `npm run test:shuffle` checks the order does not matter
+    // and `npm run test:isolated` runs them the slow way, one environment per file, to debug a suspicious failure.
+    isolate: false,
+    // little to run, so one worker (one jsdom) is faster than several that load it in parallel
+    maxWorkers: 1,
   },
 });

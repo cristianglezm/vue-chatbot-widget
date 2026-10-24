@@ -75,6 +75,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import WaveformData from 'waveform-data';
 import { useKokoroStore } from '../stores/KokoroStore';
 import { useErrorStore } from '../stores/ErrorStore';
+import { getAudioContext } from '../audioContext';
 
 const props = defineProps({
   audioKey: {
@@ -128,7 +129,6 @@ let bgCtx = null;
 let waveform = null;
 let width = ref(250);
 let animationFrameId = null;
-let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 /**
  * @brief Loads waveform data from the specified audio URL asynchronously.
@@ -143,7 +143,7 @@ const loadWaveformData = async (audioUrl) => {
         const response = await fetch(audioUrl);
         const arrayBuffer = await response.arrayBuffer();
         const options = {
-          audio_context: audioContext,
+          audio_context: getAudioContext(),
           array_buffer: arrayBuffer,
           scaleY: props.height,
           scaleX: width.value
@@ -429,15 +429,7 @@ const handleTouch = (event) => {
         sound.value.currentTime = progress * sound.value.duration;
     }
 };
-onMounted(() => {
-  if(fgCanvas.value && props.mode !== "rt"){
-      fgCanvas.value.addEventListener('click', handleClick);
-      fgCanvas.value.addEventListener('touchstart', handleTouch);
-  }
-  sound.value = props.audioPlayer;
-  bgCtx = bgCanvas.value?.getContext('2d');
-  fgCtx = fgCanvas.value?.getContext('2d');
-  kokoroStore.channel.on('ChatBotWidget#audioResp', async (e) => {
+const onAudioResp = async (e) => {
     if(e.text !== props.audioKey && props.isAudioPlaying){
         await stopAudio();
     }
@@ -449,13 +441,24 @@ onMounted(() => {
             ErrorStore.push("Error playing the audio of \"" + props.audioKey + "\"");
         }
     }
-  });
+};
+
+onMounted(() => {
+  if(fgCanvas.value && props.mode !== "rt"){
+      fgCanvas.value.addEventListener('click', handleClick);
+      fgCanvas.value.addEventListener('touchstart', handleTouch);
+  }
+  sound.value = props.audioPlayer;
+  bgCtx = bgCanvas.value?.getContext('2d');
+  fgCtx = fgCanvas.value?.getContext('2d');
+  kokoroStore.channel.on('ChatBotWidget#audioResp', onAudioResp);
 });
 onUnmounted(() => {
   if(animationFrameId){
     cancelAnimationFrame(animationFrameId);
   }
-  kokoroStore.channel.off('ChatBotWidget#audioResp');
+  // only this player's listener, `off(type)` also removed the other players' and the widget's
+  kokoroStore.channel.off('ChatBotWidget#audioResp', onAudioResp);
   if(fgCanvas.value && props.mode !== "rt"){
       fgCanvas.value.removeEventListener('click', handleClick);
       fgCanvas.value.removeEventListener('touchstart', handleTouch);

@@ -55,11 +55,18 @@ export class Kokoro{
                 env.allowLocalModels = false;
                 env.allowRemoteModels = true;
             }
-            this.instance = KokoroTTS.from_pretrained(this.modelOptions.model,
+            const instance = KokoroTTS.from_pretrained(this.modelOptions.model,
             {
                 dtype: this.modelOptions.dtype,
                 device: this.modelOptions.device === "CPU" ? "wasm":"webgpu",
                 progress_callback
+            });
+            this.instance = instance;
+            // a failed load must not stay cached as a rejected promise, the next call has to try again.
+            instance.catch(() => {
+                if(this.instance === instance){
+                    this.instance = null;
+                }
             });
         }
         return this.instance;
@@ -108,7 +115,7 @@ export const streamingAudioGen = async (callback) => {
     const stream = tts.stream(splitter, {
         voice: Kokoro.modelOptions.voice
     });
-    callback(splitter, stream);
+    await callback(splitter, stream);
 };
 /**
  * @brief Generates audio from text using remote text-to-speech (TTS) service.

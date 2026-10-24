@@ -1,5 +1,5 @@
 <template>
-  <div v-if="ErrorStore.getLength" class="ErrorModal center">
+  <dialog v-if="ErrorStore.getLength" :ref="openModal" class="ErrorModal center" @cancel.prevent="popError()">
     <span class="close" @click="clearErrors()">&times;</span>
     <div v-for="(error, id) in errors" :key="id">
       <div v-if="id === (ErrorStore.getLength - 1)" class="ErrorModal-content">
@@ -12,7 +12,7 @@
         <button @click="popError()">Ok.</button>
       </div>
     </div>
-  </div>
+  </dialog>
 </template>
 
 <script setup>
@@ -45,6 +45,13 @@ const clearErrors = () => {
 const popError = () => {
     ErrorStore.pop();
 };
+// a modal dialog (the options of the widget) covers everything else and makes it inert: the error has to be a modal
+// dialog too, opened after it, to be seen and answered. Called with the element when it is created.
+const openModal = (el) => {
+    if(el && !el.open && typeof el.showModal === 'function'){
+        el.showModal();
+    }
+};
 
 </script>
 
@@ -65,7 +72,12 @@ const popError = () => {
         box-shadow: 0rem 1rem 2rem 0rem black;
         overflow: auto;
         z-index: 11;
-        margin: auto;
+        /* a dialog is placed by the browser (inset 0 and auto margins): centered by .center instead */
+        inset: auto;
+        left: 50%;
+        top: 50%;
+        margin: 0;
+        padding: 0;
         box-sizing: content-box;
     }
     p{

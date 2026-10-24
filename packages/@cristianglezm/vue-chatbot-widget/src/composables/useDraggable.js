@@ -58,8 +58,8 @@ export const useDraggable = () => {
     onUnmounted(() => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
-      document.addEventListener('touchmove', onTouchMove);
-      document.addEventListener('touchend', onTouchEnd);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
     });
 
     return { position, onMouseDown, onTouchStart, isDragging, setPosition };

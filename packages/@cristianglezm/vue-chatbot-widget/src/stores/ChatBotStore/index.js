@@ -39,22 +39,17 @@ wm.onResponse('chatbot', (data) => {
                 message.role = "assistant";
                 message.content = data.response;
             }
-            let result = chatbotStore.executor(message.content);
-            for(const toConfirm of result.commandsToConfirm.values()){
+            // an executor can leave out what it has nothing to say about
+            const { commandsToConfirm = [], textForUser = [], infoForUser = [] } = chatbotStore.executor(message.content) ?? {};
+            for(const toConfirm of commandsToConfirm){
                 channel.emit('ChatBotWidget#ConfirmModal', toConfirm);
             }
-            let text = "";
-            for(const msg of result.textForUser.values()){
-                text += "\n" + msg;
-            }
-            if(text !== ""){
+            const text = [...textForUser].join("\n");
+            if(text.trim() !== ""){
                 chatbotStore.addMessage(message.role, text);
             }
-            let info = "";
-            for(const msg of result.infoForUser.values()){
-                info += "\n" + msg;
-            }
-            if(info !== ""){
+            const info = [...infoForUser].join("\n");
+            if(info.trim() !== ""){
                 chatbotStore.addMessage("info", info);
             }
         }
@@ -127,7 +122,7 @@ export const useChatBotStore = defineStore('ChatBotStore', {
             temperature: 0.8
         })),
         chatHistory: [],
-        executor: (content) => { return {textForUser: [content], commandsToConfirm: []}; }
+        executor: (content) => { return {textForUser: [content], infoForUser: [], commandsToConfirm: []}; }
     }),
     getters: {
         getChatHistory: (state) => {
@@ -157,8 +152,11 @@ export const useChatBotStore = defineStore('ChatBotStore', {
             this.wm.registerFactory('chatbot', factory);
         },
         async addMessage(role, message){
+            // the ids follow the clock (requestRegenerate compares them) and are unique,
+            // several messages can be added in the same millisecond.
+            const last = this.chatHistory.at(-1)?.id ?? 0;
             this.chatHistory.push({
-                "id": Date.now() + 1,
+                "id": Math.max(Date.now() + 1, last + 1),
                 "role": role,
                 "content": message
             });
@@ -228,9 +226,9 @@ export const useChatBotStore = defineStore('ChatBotStore', {
             }
         },
         async requestRegenerate(id, {chat_template = null, tools = null, documents = null}){
-            let filteredInfoChat = this.__filterInfo();
-            let filteredChat = toRaw(filteredInfoChat).filter(conv => conv.id  < id);
-            this.chatHistory = filteredChat
+            // what the model gets has no info messages, what the user sees keeps them.
+            let filteredChat = this.__filterInfo().filter(conv => conv.id  < id);
+            this.chatHistory = toRaw(this.chatHistory).filter(conv => conv.id  < id);
             if(this.isLocal){
                 this.wm.sendRequest('chatbot', {
                     jobType: "streaming",
@@ -250,12 +248,17 @@ export const useChatBotStore = defineStore('ChatBotStore', {
                 });
             }
         },
-        async requestModelLoad(){
+        /**
+         * @brief Asks the worker to load the model (or checks the remote server).
+         * @param force {Boolean} Reload the model even if it is already loaded with the same options, ie: its cache was deleted.
+         */
+        async requestModelLoad(force = false){
             if(this.isLocal){
                 this.oldModelOptions = structuredClone(toRaw(this.modelOptions));
                 this.wm.sendRequest('chatbot', {
                     jobType: "loadModel",
-                    modelOptions: structuredClone(toRaw(this.modelOptions))
+                    modelOptions: structuredClone(toRaw(this.modelOptions)),
+                    force: force
                 });
             }else{
                 fetch(this.remoteOptions.url + "/health")
@@ -263,7 +266,7 @@ export const useChatBotStore = defineStore('ChatBotStore', {
                     if(!response.ok){
                         throw Error("health endpoint not available.");
                     }
-                    response.json();
+                    return response.json();
                 })
                 .then((server) => {
                     this.isModelLoaded = server.status === "ok";

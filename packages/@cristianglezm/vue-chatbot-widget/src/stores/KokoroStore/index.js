@@ -7,10 +7,14 @@ import { RawAudio } from '@huggingface/transformers';
 
 let channel = new mitt();
 const wm = new WorkerManager(channel);
-wm.onError('kokoro', (e) => {
-    const ErrorStore = useErrorStore();
-    ErrorStore.push(e);
-});
+// An error ends the audio that was being made: the widget waits for it (it is busy until the audio or the end of the
+// stream comes), and the chunks of a stream that will never be done must not end up in the next audio.
+const audioFailed = (error) => {
+    useErrorStore().push(error);
+    useKokoroStore().pendingChunks = [];
+    channel.emit('ChatBotWidget#AudioChunkDone');
+};
+wm.onError('kokoro', audioFailed);
 wm.onResponse('kokoro', (data) => {
     const KokoroStore = useKokoroStore();
     const jobType = data.jobType;
@@ -21,8 +25,7 @@ wm.onResponse('kokoro', (data) => {
         }
             break;
         case "error":{
-            const ErrorStore = useErrorStore();
-            ErrorStore.push(data.error);
+            audioFailed(data.error);
         }
             break;
         case "updateProgressBar":{
@@ -46,13 +49,19 @@ wm.onResponse('kokoro', (data) => {
         }
             break;
         case "streamingAudioChunk#done":{
-            KokoroStore._mergePendingChunks(data.text);
-            channel.emit('ChatBotWidget#AudioChunkDone');
+            KokoroStore._mergePendingChunks(data.text)
+                .catch((e) => useErrorStore().push(e))
+                .finally(() => channel.emit('ChatBotWidget#AudioChunkDone'));
         }
             break;
     }
 });
 export const hashText = async (text) => {
+    // crypto.subtle only exists in secure contexts (https, localhost) and the hash is only the key of an
+    // in-memory cache, the text itself does the same job on a plain http page.
+    if(!globalThis.crypto?.subtle){
+        return text;
+    }
     const encoder = new TextEncoder();
     const data = encoder.encode(text);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -155,12 +164,17 @@ export const useKokoroStore = defineStore('KokoroStore', {
                 });
             }
         },
-        async requestModelLoad(){
+        /**
+         * @brief Asks the worker to load the model (or checks the remote server).
+         * @param force {Boolean} Reload the model even if it is already loaded with the same options, ie: its cache was deleted.
+         */
+        async requestModelLoad(force = false){
             if(this.isLocal){
                 this.oldModelOptions = structuredClone(toRaw(this.modelOptions));
                 this.wm.sendRequest('kokoro', {
                     jobType: "loadModel",
-                    modelOptions: structuredClone(toRaw(this.modelOptions))
+                    modelOptions: structuredClone(toRaw(this.modelOptions)),
+                    force: force
                 });
             }else{
                 fetch(this.remoteOptions.url + "/health")
@@ -168,7 +182,7 @@ export const useKokoroStore = defineStore('KokoroStore', {
                     if(!response.ok){
                         throw Error("health endpoint not available.");
                     }
-                    response.json();
+                    return response.json();
                 })
                 .then((server) => {
                     this.isModelLoaded = server.status === "ok";
@@ -189,25 +203,33 @@ export const useKokoroStore = defineStore('KokoroStore', {
             if(!this.pendingChunks || this.pendingChunks.length === 0){
               return;
             }
+            // these chunks are this audio's whatever happens next: a failure must not leave them for the next one,
+            // and the chunks of a stream that starts meanwhile are not part of this one.
+            const chunks = this.pendingChunks;
+            this.pendingChunks = [];
             let mergedAudioSamples = [];
             let sampleRate = 44100;
             const chunkSize = 10000;
-            for(let chunk of this.pendingChunks){
-                const response = await fetch(chunk.audio);
-                const arrayBuffer = await response.arrayBuffer();
-                const audioContext = new AudioContext();
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                const channelData = audioBuffer.getChannelData(0);
-                for(let i = 0;i < channelData.length;i += chunkSize){
-                    mergedAudioSamples.push(...channelData.slice(i, i + chunkSize));
+            // browsers only allow a few open AudioContext
+            const audioContext = new AudioContext();
+            try{
+                for(let chunk of chunks){
+                    const response = await fetch(chunk.audio);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    const channelData = audioBuffer.getChannelData(0);
+                    for(let i = 0;i < channelData.length;i += chunkSize){
+                        mergedAudioSamples.push(...channelData.slice(i, i + chunkSize));
+                    }
+                    sampleRate = audioBuffer.sampleRate;
                 }
-                sampleRate = audioBuffer.sampleRate;
+            }finally{
+                await audioContext.close();
             }
             const rawAudio = new RawAudio(new Float32Array(mergedAudioSamples), sampleRate);
             const wavBlob = rawAudio.toBlob();
             const audioURL = URL.createObjectURL(wavBlob);
             await this.addAudio(text, audioURL);
-            this.pendingChunks = [];
         },
         async saveModelOptions(){
             localStorage.setItem(STORAGE_KEY_KOKORO_MODEL_OPTIONS, JSON.stringify(this.modelOptions));

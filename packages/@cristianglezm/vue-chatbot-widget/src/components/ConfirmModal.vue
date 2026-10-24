@@ -1,5 +1,5 @@
 <template>
-  <dialog :id="props.id">
+  <dialog :id="props.id" @cancel.prevent="nextItem()">
     <div class="ConfirmModal-container center">
       <div class="inlined">
         <h2>{{ data.title }}</h2>
@@ -8,7 +8,7 @@
       <p style="text-align: center;">{{ data.message }}</p>
       <div>
         <button @click="nextItem()">{{ data.btnNo }}</button>
-        <button @click="data.accept(); nextItem()">{{ data.btnYes }}</button>
+        <button @click="answerYes()">{{ data.btnYes }}</button>
       </div>
     </div>
   </dialog>
@@ -58,42 +58,57 @@ const props = defineProps({
 const data = reactive({});
 
 const openModal = () => {
-    data.dialog.showModal();
+    if(!data.dialog.open){
+        data.dialog.showModal();
+    }
 };
 
 const closeModal = () => {
-    data.dialog.close();
+    if(data.dialog?.open){
+        data.dialog.close();
+    }
 };
+// shows the next request, in the order they arrived, or closes when there is none.
 const nextItem = () => {
     if(data.queue.length > 0){
-        let item = data.queue.pop();
+        let item = data.queue.shift();
         data.title = item.title;
         data.message = item.message;
         data.btnNo = item.btnNo;
         data.btnYes = item.btnYes;
         data.accept = item.onConfirm;
+        data.showing = true;
     }else{
+        data.showing = false;
         closeModal();
+    }
+};
+const answerYes = () => {
+    data.accept?.();
+    nextItem();
+};
+const onRequest = (e) => {
+    data.queue.push(e);
+    // the one on screen is not replaced, the new request waits for its turn.
+    if(!data.showing && data.timer === null){
+        data.timer = setTimeout(() => {
+            data.timer = null;
+            nextItem();
+            openModal();
+        }, 20);
     }
 };
 onMounted(() => {
     data.dialog = document.getElementById(props.id);
     data.queue = new Array();
-    props.channel.on(props.on, (e) => {
-        if(data.queue.length > 0){
-            data.queue.push(e);
-        }else{
-            data.queue.push(e);
-            setTimeout(() => {
-                nextItem();
-                openModal();
-            }, 20);
-        }
-    });
+    data.showing = false;
+    data.timer = null;
+    props.channel.on(props.on, onRequest);
 });
 
 onBeforeUnmount(() => {
-    props.channel.off(props.on);
+    clearTimeout(data.timer);
+    props.channel.off(props.on, onRequest);
 });
 
 </script>

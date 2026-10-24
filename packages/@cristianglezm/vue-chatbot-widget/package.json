@@ -50,7 +50,9 @@
     "format": "prettier --write src/",
     "clean": "rm -rf dist",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:isolated": "vitest run --isolate --maxWorkers=4",
+    "test:shuffle": "vitest run --sequence.shuffle.files --sequence.shuffle.tests"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.28",
@@ -73,6 +75,7 @@
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.35.1",
     "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/test-utils": "^2.5.1",
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.33.0",
     "eslint-plugin-vue": "^10.4.0",
