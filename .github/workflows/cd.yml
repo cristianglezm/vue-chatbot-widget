@@ -21,10 +21,7 @@ jobs:
         env:
             GITUSER: ${{secrets.GITUSER}}
             EMAIL: ${{secrets.EMAIL}}
-            CHATBOT_WORKER_URL: ${{ secrets.CHATBOT_WORKER_URL }}
-            KOKORO_WORKER_URL: ${{ secrets.KOKORO_WORKER_URL }}
         run: |
           bash .devops/build_dist_lib.sh
-          bash .devops/replaceWorkers.sh "$CHATBOT_WORKER_URL" "$KOKORO_WORKER_URL"
           bash .devops/build_dist_demo.sh
           bash .devops/deploy.sh "$GITUSER" "$EMAIL"

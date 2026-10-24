@@ -28,6 +28,27 @@ You can install the package from npm.
 ```bash
 npm i @cristianglezm/vue-chatbot-widget
 ```
+### Workers
+
+The chat (and the text to speech) run in Web Workers. The library does **not** bundle them: they pull in
+onnxruntime (~20 MB of wasm), and a library build would inline all of it into every worker. Your bundler builds
+them instead, you only have to import them with `?worker` (vite) and hand over a function that creates each one:
+
+```javascript
+import ChatBotWorker from '@cristianglezm/vue-chatbot-widget/workers/chatbot.worker?worker';
+import KokoroWorker from '@cristianglezm/vue-chatbot-widget/workers/kokoro.worker?worker';
+
+const workers = {
+    chatbot: () => new ChatBotWorker(), // needed to chat, local or remote models
+    kokoro: () => new KokoroWorker(),   // only needed for text to speech
+};
+```
+
+A worker is created the first time something is sent to it, so a worker you never use is never started.
+If something needs a worker that was not provided you get an error in the `ErrorModal` telling you which one.
+
+### Setup
+
 If you plan to use all the components you will need to initizalize the pinia store and add ChatBotPlugin into the app.
 
 ```javascript
@@ -36,6 +57,8 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia';
 // import the plugin
 import ChatBotPlugin from '@cristianglezm/vue-chatbot-widget';
+import ChatBotWorker from '@cristianglezm/vue-chatbot-widget/workers/chatbot.worker?worker';
+import KokoroWorker from '@cristianglezm/vue-chatbot-widget/workers/kokoro.worker?worker';
 import './style.css'
 
 import App from './App.vue'
@@ -45,17 +68,24 @@ const pinia = createPinia();
 // registers the pinia store
 app.use(pinia);
 // and the ChatBot components
-app.use(ChatBotPlugin, { pinia });
+app.use(ChatBotPlugin, {
+    pinia,
+    workers: {
+        chatbot: () => new ChatBotWorker(),
+        kokoro: () => new KokoroWorker(),
+    },
+});
 app.mount('#app')
 ```
 
-If you plan to only use a component you can just call ``initStores({ pinia })`` instead.
+If you plan to only use a component you can just call ``initStores({ pinia, workers })`` instead.
 
 ```javascript
 // app main.ts
 import { createApp } from 'vue'
 import { createPinia } from 'pinia';
 import { initStores } from '@cristianglezm/vue-chatbot-widget';
+import ChatBotWorker from '@cristianglezm/vue-chatbot-widget/workers/chatbot.worker?worker';
 import './style.css'
 
 import App from './App.vue'
@@ -65,9 +95,12 @@ const pinia = createPinia();
 // registers the pinia store
 app.use(pinia);
 // init stores for the chatbot components.
-initStores({ pinia });
+initStores({ pinia, workers: { chatbot: () => new ChatBotWorker() } });
 app.mount('#app')
 ```
+
+> **Upgrading from 0.0.9 or older:** `ChatBotWorker` and `KokoroWorker` are no longer exported by the package,
+> import them from `@cristianglezm/vue-chatbot-widget/workers/*` as shown above and pass them in `workers`.
 
 ## Usage
 

@@ -1,13 +1,11 @@
 import mitt from 'mitt';
 import { defineStore } from 'pinia';
 import WorkerManager from '../WorkerManager';
-import chatbot from '../../workers/chatbot.worker?worker';
 import { toRaw } from 'vue';
 import { useErrorStore } from '../ErrorStore';
 
 let channel = new mitt();
 const wm = new WorkerManager(channel);
-wm.addWorker('chatbot', new chatbot());
 wm.onError('chatbot', (e) => {
     const ErrorStore = useErrorStore();
     ErrorStore.push(e);
@@ -151,6 +149,13 @@ export const useChatBotStore = defineStore('ChatBotStore', {
         }
     },
     actions: {
+        /**
+         * @brief Tells the store how to build its worker (it is created on the first request).
+         * @param factory {Function} () => new Worker, ie: () => new ChatBotWorker()
+         */
+        registerWorker(factory){
+            this.wm.registerFactory('chatbot', factory);
+        },
         async addMessage(role, message){
             this.chatHistory.push({
                 "id": Date.now() + 1,
