@@ -6,7 +6,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 // @ts-expect-error vite-plugin-eslint ships no types for ESM
 import eslint from 'vite-plugin-eslint';
 
-const widgetSrc = path.resolve(__dirname, 'packages/@cristianglezm/vue-chatbot-widget/src/main.ts');
+const widgetSrc = path.resolve(import.meta.dirname, 'packages/@cristianglezm/vue-chatbot-widget/src/main.ts');
 
 export default defineConfig(({ command }) => ({
   plugins: [
