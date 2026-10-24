@@ -11,6 +11,11 @@ updates:
     assignees:
       - cristianglezm
     open-pull-requests-limit: 8
+    ignore:
+      # the unit tests mock transformers.js: a green run proves nothing about a new major.
+      # Migrate by hand after the investigation (plan, section 12), then remove this.
+      - dependency-name: "@huggingface/transformers"
+        update-types: ["version-update:semver-major"]
     groups:
       AI:
         patterns:
@@ -27,21 +32,32 @@ updates:
           - "waveform-data"
       dev-typescript:
         patterns:
-          - "@tsconfig/node22"
+          - "@tsconfig/node*"
           - "@types/*"
           - "@typescript-*"
           - "@vue/tsconfig"
           - "typescript"
           - "vue-tsc"
+        exclude-patterns:
+          - "@types/jsdom"
       dev-vite:
         patterns:
           - "@vitejs/plugin-vue"
           - "vite*"
+        exclude-patterns:
+          - "vitest"
+      dev-test:
+        patterns:
+          - "@playwright/test"
+          - "@types/jsdom"
+          - "@vitest/*"
+          - "@vue/test-utils"
+          - "jsdom"
+          - "vitest"
       dev-misc:
         patterns:
           - "@eslint/js"
           - "eslint*"
-          - "vite-plugin-eslint"
           - "vue-eslint-parser"
           - "@vue/eslint-config-prettier"
           - "@vue/eslint-config-typescript"
