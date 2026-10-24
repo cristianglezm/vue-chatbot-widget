@@ -1,7 +1,7 @@
 import mitt from 'mitt';
 import { defineStore } from 'pinia';
 import WorkerManager from '../WorkerManager';
-import kokoro from '@cristianglezm/vue-chatbot-widget/workers/kokoro.worker?worker';
+import kokoro from '../../workers/kokoro.worker?worker';
 import { toRaw } from 'vue';
 import { useErrorStore } from '../ErrorStore';
 import { RawAudio } from '@huggingface/transformers';

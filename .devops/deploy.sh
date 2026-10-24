@@ -1,10 +1,11 @@
 #!/bin/bash
 
+set -eu
+
 GITUSER=$1
 EMAIL=$2
 
-cd demo
-git config user.name $GITUSER && git config user.email $EMAIL
+git config user.name "$GITUSER" && git config user.email "$EMAIL"
 git checkout --orphan gh-pages
 git --work-tree dist add --all
 git --work-tree dist commit -m"gh-pages"

@@ -1,13 +1,15 @@
 #!/bin/bash
 
 ## workaround for big workers bug.
-set -e
+set -euo pipefail
 
 CHATBOT_URL=$1
 KOKORO_URL=$2
 
-ORIG_CHATBOT=$(ls dist/lib/assets/chatbot.*.js)
-ORIG_KOKORO=$(ls dist/lib/assets/kokoro.*.js)
+ASSETS=packages/@cristianglezm/vue-chatbot-widget/dist/lib/assets
+
+ORIG_CHATBOT=$(ls $ASSETS/chatbot.*.js)
+ORIG_KOKORO=$(ls $ASSETS/kokoro.*.js)
 
 curl -o "$ORIG_CHATBOT" "$CHATBOT_URL"
 curl -o "$ORIG_KOKORO" "$KOKORO_URL"
