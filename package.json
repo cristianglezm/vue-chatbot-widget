@@ -19,6 +19,7 @@
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "lint:widget": "npm run lint -w @cristianglezm/vue-chatbot-widget",
+    "test:widget": "npm run test -w @cristianglezm/vue-chatbot-widget",
     "format": "prettier --write src/",
     "clean": "rm -rf dist && npm run clean -w @cristianglezm/vue-chatbot-widget"
   },
