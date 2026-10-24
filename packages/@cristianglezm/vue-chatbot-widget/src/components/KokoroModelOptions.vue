@@ -1,9 +1,9 @@
 <template>
   <div class="ModelOptions-container">
     <h2> Kokoro Model Options</h2>
-    <div id="chatbot-host-option" class="option-box labelInputArea">
+    <div id="kokoro-host-option" class="option-box labelInputArea">
       <ToolTip :info="'Host from which to download the model'" />
-      <label for="chatbot-host-select"> Host: </label>
+      <label for="kokoro-host-select"> Host: </label>
       <select id="kokoro-host-select" v-model="data.modelOptions.host" class="styled-select" name="hosts" @change="onChange()">
         <option value="huggingface"> https://huggingface.co </option>
         <option value="localhost"> http://localhost </option>
@@ -16,7 +16,7 @@
     </div>
     <div id="kokoro-device-option" class="option-box labelInputArea">
       <ToolTip :info="'where to run the model'" />
-      <label for="kokoro-device"> Device: </label>
+      <label for="kokoro-device-cpu"> Device: </label>
       <input id="kokoro-device-cpu" v-model="data.modelOptions.device" type="radio" name="kokoro-device" value="CPU" @change="onChange()"> CPU
       <input id="kokoro-device-gpu" v-model="data.modelOptions.device" type="radio" name="kokoro-device" :disabled="isGPUAvailable() === false" value="GPU" @change="onChange()"> GPU
     </div>
@@ -154,7 +154,7 @@
       if(isModelLoaded()){
         return;
       }
-      emitter.emit("ChatBotWidget#loadKokoroModel");
+      emitter.emit("ChatBotWidget#loadKokoroModel", { force: data.forceReload });
       data.forceReload = false;
     }
     const hasModelOptionsChanged = () => {
@@ -187,28 +187,30 @@
     const toggleVoicesCacheManager = () => {
       data.openVoicesCache = !data.openVoicesCache;
     };
+    // the handlers are named so onUnmounted removes only these, `off(type)` would remove everybody's
+    const onUpdateBtnTitle = () => {
+      nextTick(() => {
+        reloadCache();
+        setCorrectBtnTitle();
+      });
+    };
+    const onForceReload = () => {
+      data.forceReload = true;
+    };
+    let titleTimer = null;
     onMounted(() => {
       KokoroStore.saveModelOptions();
-      setTimeout(() => {
-        if(isModelDownloaded()){
-          data.btnTitle = "Load Model";
-        }else{
-          data.btnTitle = "Download Model";
-        }
+      titleTimer = setTimeout(() => {
+        titleTimer = null;
+        data.btnTitle = isModelDownloaded() ? "Load Model" : "Download Model";
       }, 500);
-      emitter.on('ChatBotModelOptions#updateBtnTitle', () => {
-        nextTick(() => {
-          reloadCache();
-          setCorrectBtnTitle();
-        });
-      });
-      emitter.on('modelOptions#forceReload', () => {
-        data.forceReload = true;
-      });
+      emitter.on('ChatBotModelOptions#updateBtnTitle', onUpdateBtnTitle);
+      emitter.on('modelOptions#forceReload', onForceReload);
     });
     onUnmounted(() => {
-      emitter.off('ChatBotModelOptions#updateBtnTitle');
-      emitter.off('modelOptions#forceReload');
+      clearTimeout(titleTimer);
+      emitter.off('ChatBotModelOptions#updateBtnTitle', onUpdateBtnTitle);
+      emitter.off('modelOptions#forceReload', onForceReload);
     });
   </script>
   

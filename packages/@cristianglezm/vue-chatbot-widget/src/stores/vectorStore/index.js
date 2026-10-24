@@ -45,7 +45,7 @@ export const useVectorStore = defineStore('vectorStore', {
          * @returns {Array<Object>} An array of document objects with `title` and `content`.
          */
         getDocuments: (state) => {
-            return Object.keys(state.documents).map(title => ({ title: title, content: state.documents.get(title) }));
+            return Array.from(state.documents.keys()).map(title => ({ title: title, content: state.documents.get(title) }));
         },
         /**
          * @brief Retrieves all embeddings as an array of objects (key, embeddings)
@@ -135,6 +135,8 @@ export const useVectorStore = defineStore('vectorStore', {
          */
         removeDocument(title){
             this.documents.delete(title);
+            // otherwise it would still be retrieved by similarity.
+            this.documents_embeddings.delete(title);
         },
         /**
          * @brief Retrieves all document titles (keys).
@@ -204,6 +206,8 @@ export const useVectorStore = defineStore('vectorStore', {
          */
         removeTool(key){
             this.tools.delete(key);
+            // otherwise it would still be retrieved by similarity, as an undefined.
+            this.tools_embeddings.delete(key);
         },
         /**
          * @brief Retrieves all tools names (keys).

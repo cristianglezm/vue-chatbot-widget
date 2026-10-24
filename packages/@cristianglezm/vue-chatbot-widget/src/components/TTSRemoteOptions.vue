@@ -46,7 +46,6 @@
         'af_nicole',
         'af_jessica',
         'af_kore',
-        'af_nicole',
         'af_nova',
         'af_river',
         'af_sarah',

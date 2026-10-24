@@ -1,8 +1,8 @@
 <template>
-  <div class="tipInfo" @mouseenter="toggleInfo()" @mouseleave="toggleInfo()" @click="toggleInfo()">
+  <div class="tipInfo" @mouseenter="hovering = true" @mouseleave="hovering = false" @click="pinned = !pinned">
     i
   </div>
-  <div v-if="showing" class="infoBox" @mouseenter="toggleInfo()" @mouseleave="toggleInfo()">
+  <div v-if="showing" class="infoBox" @mouseenter="hovering = true" @mouseleave="hovering = false">
     <p>{{ props.info }}</p>
   </div>
 </template>
@@ -18,7 +18,7 @@
  *     <ToolTip :info="'info to display'" />
  * </template>
  */
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     info: {
@@ -26,10 +26,11 @@ const props = defineProps({
         required: true
     },
 });
-const showing = ref(false);
-const toggleInfo = () => {
-    showing.value = !showing.value;
-};
+// hovering follows the pointer, pinned is a click. A tap on a touch screen fires mouseenter and then click,
+// so the click must not undo what the mouseenter showed.
+const hovering = ref(false);
+const pinned = ref(false);
+const showing = computed(() => hovering.value || pinned.value);
 </script>
 
 <style scoped>

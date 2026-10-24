@@ -76,25 +76,26 @@ const hasModelOptionsChanged = (modelOptions) => {
     return ((Kokoro.modelOptions.host !== modelOptions.host) ||
             (Kokoro.modelOptions.model !== modelOptions.model) ||
             (Kokoro.modelOptions.device !== modelOptions.device) ||
-            (Kokoro.modelOptions.dtpe !== modelOptions.dtype) ||
+            (Kokoro.modelOptions.dtype !== modelOptions.dtype) ||
             Kokoro.modelOptions.voice !== modelOptions.voice);
 };
 /**
  * @brief Loads the model with the specified options. If the model options have changed, it resets the chatbot instance.
  *        This function also handles progress reporting and communication with the worker thread.
  * @param {Object} modelOptions - The new model options to use.
+ * @param {Boolean} [force=false] - Reset the model even if the options did not change, ie: its cache was deleted.
  * @param {String} modelOptions.host - The host URL or identifier.
  * @param {String} modelOptions.model - The model identifier.
  * @param {String} modelOptions.device - The device where the model will run (e.g., "CPU").
  * @param {String} modelOptions.dtype - The data type used by the model (e.g., "q4").
  * @param {String} modelOptions.voice - The voice type used by the model (e.g. "af_bella").
  */
-const loadModel = async (modelOptions) => {
-    if(hasModelOptionsChanged(modelOptions)){
+const loadModel = async (modelOptions, force = false) => {
+    if(force || hasModelOptionsChanged(modelOptions)){
         await Kokoro.reset();
     }
     Kokoro.setModelOptions(modelOptions);
-    Kokoro.getInstance((data) => {
+    const onProgress = (data) => {
         switch(data.status){
           case "initiate":{
               let event = {
@@ -123,16 +124,24 @@ const loadModel = async (modelOptions) => {
               });
           }
             break;
-          case "done":{
-            self.postMessage({
-                jobType: "updateBtnTitle",
-                eventName: "ChatBotModelOptions#updateBtnTitle",
-                event: ""
-            });
-          }
-            break;
         }
-    });
+    };
+    try{
+        await Kokoro.getInstance(onProgress);
+        // `done` is reported once per downloaded file, the model is only ready when all of them are loaded.
+        self.postMessage({
+            jobType: "updateBtnTitle",
+            eventName: "ChatBotModelOptions#updateBtnTitle",
+            event: ""
+        });
+    }finally{
+        // the modal also has to close when the load failed, the error itself is reported by the caller.
+        self.postMessage({
+            jobType: "updateProgressBar",
+            eventName: "ChatBotWidget#requestMultiProgressBar",
+            event: { status: "finish" }
+        });
+    }
 }
 
 const _audioGen = async (e) => {
@@ -147,7 +156,8 @@ const _audioGen = async (e) => {
 };
 const _streamingAudioGen = async (e) => {
     const fullText = e.data.text;
-    streamingAudioGen(async (splitter, stream) => {
+    // awaited: a failure while streaming has to reach the try/catch of the router
+    await streamingAudioGen(async (splitter, stream) => {
         splitter.push(fullText);
         splitter.close();
         for await(const { text, _, audio } of stream){
@@ -200,7 +210,7 @@ self.onmessage = async (e) => {
     switch(jobType){
         case "loadModel":{
           try{
-                loadModel(e.data.modelOptions);
+                await loadModel(e.data.modelOptions, e.data.force);
           }catch(e){
                 self.postMessage({
                 jobType: "error",
@@ -222,7 +232,7 @@ self.onmessage = async (e) => {
             break;
         case "audioGen":{
             try{
-                _audioGen(e);
+                await _audioGen(e);
             }catch(e){
                 self.postMessage({
                   jobType: "error",
@@ -233,7 +243,7 @@ self.onmessage = async (e) => {
             break;
         case "streamingAudio":{
             try{
-                _streamingAudioGen(e);
+                await _streamingAudioGen(e);
             }catch(e){
                 self.postMessage({
                     jobType: "error",
@@ -244,7 +254,7 @@ self.onmessage = async (e) => {
             break;
         case "rAudioGen":{
             try{
-                _rAudioGen(e);
+                await _rAudioGen(e);
             }catch(e){
                 self.postMessage({
                   jobType: "error",
@@ -255,7 +265,7 @@ self.onmessage = async (e) => {
             break;
         case "rStreamingAudio":{
             try{
-                _rStreamingAudioGen(e);
+                await _rStreamingAudioGen(e);
             }catch(e){
                 self.postMessage({
                     jobType: "error",

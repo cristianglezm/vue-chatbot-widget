@@ -108,6 +108,11 @@ const deleteCacheHost = async (host) => {
             btnYes: 'delete selected files from cache.',
             onConfirm: async () => {
                 await cm.deleteFilesFrom(host, files);
+                // a host left without files is gone from the cache: drop it from the list too
+                data.hosts = Array.from(cm.cacheHosts.keys());
+                if(!cm.cacheHosts.has(host)){
+                    data.selectedHost = "";
+                }
                 loadHostFiles();
                 emit('on-delete-files');
             }

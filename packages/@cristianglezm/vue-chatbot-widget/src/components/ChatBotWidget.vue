@@ -331,7 +331,7 @@
  *     :executor="customExecutor"
  * />
  */
-import { reactive, ref, computed, toRaw, onMounted, onUnmounted, nextTick } from 'vue';
+import { reactive, ref, computed, toRaw, onMounted, onBeforeUnmount, onUnmounted, nextTick } from 'vue';
 import mitt from 'mitt';
 import { useChatBotStore } from '../stores/ChatBotStore';
 import { useKokoroStore } from '../stores/KokoroStore';
@@ -411,7 +411,7 @@ const props = defineProps({
     emitter:{
         type: Object,
         required: false,
-        default: mitt()
+        default: () => mitt()
     },
     system:{
         type: String,
@@ -483,41 +483,52 @@ const chatHistory = computed(() => {
 const isBusy = computed(() => {
     return data.processingAudio || data.processingMessage || (data.pendingEmbeddings > 0);
 });
+// What the widget registers is kept so unmounting removes only that: `off(type)` without the handler also removes the
+// ones of the app and of other widgets, and the emitter is the app's.
+const registered = [];
+const listen = (channel, event, handler) => {
+    channel.on(event, handler);
+    registered.push([channel, event, handler]);
+};
+const timers = new Set();
+const later = (fn, ms) => {
+    const id = setTimeout(() => {
+        timers.delete(id);
+        fn();
+    }, ms);
+    timers.add(id);
+};
 const onChange = () => {
     localStorage.setItem(CHATBOT_SETTINGS_KEY, JSON.stringify(toRaw(data.options)));
 }
 const togglePanelLLM = () => {
-    let wasLocal = ChatBotStore.isLocal;
-    ChatBotStore.isLocal = !ChatBotStore.isLocal;
+    const wasLocal = ChatBotStore.isLocal;
+    const wasLoaded = ChatBotStore.hasModelLoaded;
+    if(wasLocal && wasLoaded){
+        data.computedEmbeddings = false;
+        // reset local model when user changes to remote, asked before the change: a store that is not local ignores it
+        ChatBotStore.requestReset();
+    }
+    ChatBotStore.isLocal = !wasLocal;
     ChatBotStore.saveIsLocal();
-    if(wasLocal){
-        if(ChatBotStore.hasModelLoaded){
-            data.computedEmbeddings = false;
-            // reset local model when user changes to remote
-            ChatBotStore.requestReset();
-        }
-    }else{
-        if(ChatBotStore.hasModelLoaded){
-            data.computedEmbeddings = false;
-            // reload local model when user changes to local
-            props.emitter.emit("ChatBotWidget#loadChatBotModel");
-        }
+    if(!wasLocal && wasLoaded){
+        data.computedEmbeddings = false;
+        // reload local model when user changes to local
+        props.emitter.emit("ChatBotWidget#loadChatBotModel");
     }
 };
 const togglePanelKokoro = () => {
-    let wasLocal = KokoroStore.isLocal;
-    KokoroStore.isLocal = !KokoroStore.isLocal;
+    const wasLocal = KokoroStore.isLocal;
+    const wasLoaded = KokoroStore.hasModelLoaded;
+    if(wasLocal && wasLoaded){
+        // reset local model when user changes to remote, asked before the change: a store that is not local ignores it
+        KokoroStore.requestReset();
+    }
+    KokoroStore.isLocal = !wasLocal;
     KokoroStore.saveIsLocal();
-    if(wasLocal){
-        if(KokoroStore.hasModelLoaded){
-            // reset local model when user changes to remote
-            KokoroStore.requestReset();
-        }
-    }else{
-        if(KokoroStore.hasModelLoaded){
-            // reload local model when user changes to local
-            props.emitter.emit("ChatBotWidget#loadKokoroModel");
-        }
+    if(!wasLocal && wasLoaded){
+        // reload local model when user changes to local
+        props.emitter.emit("ChatBotWidget#loadKokoroModel");
     }
 };
 const isChatBotOnline = computed(() => {
@@ -536,9 +547,26 @@ const loadChatBot = () => {
         KokoroStore.requestModelLoad();
     }
 };
+/**
+ * @brief moves the widget up/left, only as much as needed, so it does not end outside of the window.
+ * It starts in the bottom right corner, the chat grows down and right from there.
+ */
+const keepInViewport = () => {
+    if(!chatBox.value){
+        return;
+    }
+    const rect = chatBox.value.getBoundingClientRect();
+    const x = Math.max(0, Math.min(position.value.x, window.innerWidth - rect.width - 20));
+    const y = Math.max(0, Math.min(position.value.y, window.innerHeight - rect.height - 20));
+    if(x !== position.value.x || y !== position.value.y){
+        setPosition({ x, y });
+    }
+};
 const toggleMessageWindow = () => {
     data.chatOpened = !data.chatOpened;
     data.expanded = false;
+    // the size is known after the render
+    nextTick(keepInViewport);
 };
 const resetPosition = () => {
     const pos = { x: 0, y: 0 };
@@ -574,6 +602,10 @@ const toggleOptions = () => {
     data.openOptions = !data.openOptions;
 };
 const handleEnter = (event) => {
+    // Enter confirms the text being composed with an input method (Chinese, Japanese, Korean), it is not "send"
+    if(event.isComposing || event.keyCode === 229){
+        return;
+    }
     if(event.key === "Enter" && event.shiftKey){
         event.preventDefault();
         data.message += "\n";
@@ -587,7 +619,7 @@ const sendMessage = () => {
         ErrorStore.push("ChatBot not loaded, please load it by clicking the red dot.");
         return;
     }
-    if(data.message.length === 0 || data.processingMessage){
+    if(data.message.trim().length === 0 || data.processingMessage){
         return;
     }
     if(!data.computedEmbeddings && data.options.useEmbeddings){
@@ -666,12 +698,16 @@ const resetChat = () => {
     ChatBotStore.addMessage("assistant", props.greetings);
 };
 const requestAudio = async (text) => {
-    if(KokoroStore.hasModelLoaded && !data.processingAudio){
-        data.processingAudio = true;
-        KokoroStore.requestAudioGen(text);
-    }else{
+    if(!KokoroStore.hasModelLoaded){
         ErrorStore.push("The Speech generation model is not loaded, please load it first.");
+        return;
     }
+    if(data.processingAudio){
+        // one at a time, the play buttons are disabled meanwhile
+        return;
+    }
+    data.processingAudio = true;
+    KokoroStore.requestAudioGen(text);
 }
 const playNextAudio = () => {
     if(queue.value.length){
@@ -692,44 +728,47 @@ const computeEmbeddings = () => {
     }
 };
 onMounted(() => {
+    // once for the life of the widget: it moves the queue of chunks, and does nothing when the queue is empty
+    audioPlayer.value.addEventListener('ended', playNextAudio);
     if(props.tools){
         vectorStore.mapTools(props.tools);
     }
     if(props.documents){
         vectorStore.mapDocuments(props.documents);
     }
-    props.emitter.on('ChatBotWidget#loadChatBotModel', () => {
-        setTimeout(() => {
+    listen(props.emitter, 'ChatBotWidget#loadChatBotModel', (e) => {
+        later(() => {
             props.emitter.emit('ChatBotWidget#requestMultiProgressBar', {
                 status: "setup",
                 title: "downloading or loading chatbot model",
                 onLoad: async () => {
-                    ChatBotStore.requestModelLoad();
+                    ChatBotStore.requestModelLoad(e?.force === true);
                 }
             });
         }, 2000);
     });
-    props.emitter.on('ChatBotWidget#loadKokoroModel', () => {
-        setTimeout(() => {
+    listen(props.emitter, 'ChatBotWidget#loadKokoroModel', (e) => {
+        later(() => {
             props.emitter.emit('ChatBotWidget#requestMultiProgressBar', {
                 status: "setup",
                 title: "downloading or loading Kokoro model",
                 onLoad: async () => {
-                    KokoroStore.requestModelLoad();
+                    KokoroStore.requestModelLoad(e?.force === true);
                 }
             });
         }, 2000);
     });
-    KokoroStore.channel.on('ChatBotWidget#audioResp', (_) => {
+    listen(KokoroStore.channel, 'ChatBotWidget#audioResp', (_) => {
         data.processingAudio = false;
     });
-    KokoroStore.channel.on('ChatBotWidget#AudioChunkDone', (_) => {
+    listen(KokoroStore.channel, 'ChatBotWidget#AudioChunkDone', (_) => {
+        // the chunks that still wait keep playing, `ended` moves the queue until it is empty
         data.processingAudio = false;
-        audioPlayer.value.removeEventListener('ended', playNextAudio);
     });
-    KokoroStore.channel.on('ChatBotWidget#AudioChunk', (e) => {
+    listen(KokoroStore.channel, 'ChatBotWidget#AudioChunk', (e) => {
         data.processingAudio = true;
-        if(audioPlayer.value.currentTime > 0 && !audioPlayer.value.paused){
+        // not paused is playing from the moment play() is called, the time does not move until it starts
+        if(!audioPlayer.value.paused){
             queue.value.push({
                 text: e.text,
                 audio: e.audio
@@ -737,19 +776,18 @@ onMounted(() => {
         }else{
             audioPlayer.value.src = e.audio;
             audioPlayer.value.play();
-            audioPlayer.value.addEventListener('ended', playNextAudio);
         }
     });
-    KokoroStore.channel.on('ChatBotWidget#ToEmitter', (e) => {
+    listen(KokoroStore.channel, 'ChatBotWidget#ToEmitter', (e) => {
         props.emitter.emit(e.eventName, e.event);
     });
-    ChatBotStore.channel.on('ChatBotWidget#ToEmitter', (e) => {
+    listen(ChatBotStore.channel, 'ChatBotWidget#ToEmitter', (e) => {
         if("ChatBotModelOptions#updateBtnTitle" === e.eventName){
             computeEmbeddings();
         }
         props.emitter.emit(e.eventName, e.event);
     });
-    ChatBotStore.channel.on('ChatBotWidget#userEmbeddings', (e) => {
+    listen(ChatBotStore.channel, 'ChatBotWidget#userEmbeddings', (e) => {
         let tools = null;
         let documents = null;
         if(props.tools){
@@ -766,15 +804,15 @@ onMounted(() => {
         let lastMessage = ChatBotStore.getLastMessage();
         lastMessage.embeddings = e.embeddings;
     });
-    ChatBotStore.channel.on('ChatBotWidget#documentEmbeddings', (e) => {
+    listen(ChatBotStore.channel, 'ChatBotWidget#documentEmbeddings', (e) => {
         vectorStore.addDocumentEmbeddings(e.text, e.embeddings);
         --data.pendingEmbeddings;
     });
-    ChatBotStore.channel.on('ChatBotWidget#toolEmbeddings', (e) => {
+    listen(ChatBotStore.channel, 'ChatBotWidget#toolEmbeddings', (e) => {
         vectorStore.addToolEmbeddings(e.text, e.embeddings);
         --data.pendingEmbeddings;
     });
-    ChatBotStore.channel.on('ChatBotWidget#done', async () => {
+    listen(ChatBotStore.channel, 'ChatBotWidget#done', async () => {
         data.processingMessage = false;
         data.pendingMsg = "";
         if(KokoroStore.hasModelLoaded && data.options.generateSpeech && !data.processingAudio){
@@ -795,7 +833,7 @@ onMounted(() => {
             }
         }
     });
-    ChatBotStore.channel.on('ChatBotWidget#stream', (e) => {
+    listen(ChatBotStore.channel, 'ChatBotWidget#stream', (e) => {
         if(data.processingMessage){
             data.pendingMsg += e;
         }
@@ -822,19 +860,19 @@ onMounted(() => {
         throw Error("props.config is null, if props.editable is false, you need to provide a valid props.config");
     }
     if(props.config){
-        if(props.config.generateSpeech){
+        if(props.config.generateSpeech !== undefined){
             data.options.generateSpeech = props.config.generateSpeech;
         }
-        if(props.config.threshold){
+        if(props.config.threshold !== undefined){
             data.options.threshold = props.config.threshold;
         }
-        if(props.config.useEmbeddings){
+        if(props.config.useEmbeddings !== undefined){
             data.options.useEmbeddings = props.config.useEmbeddings;
         }
         applyConfig(props.config.llm, ChatBotStore);
         applyConfig(props.config.tts, KokoroStore);
     }
-    setTimeout(() => {
+    later(() => {
         resetChat();
         nextTick(() => {
             resetPosition();
@@ -843,9 +881,11 @@ onMounted(() => {
     const parentElement = chatBox.value.parentElement;
     parentElementDisplay.value = getComputedStyle(parentElement).display;
     observer = new MutationObserver(() => {
+        const wasHidden = parentElementDisplay.value === 'none';
         parentElementDisplay.value = getComputedStyle(parentElement).display;
-        if (parentElementDisplay.value !== 'none') {
-            setTimeout(() => {
+        // it starts again when the parent is shown after being hidden, any other change of its style is not that
+        if (wasHidden && parentElementDisplay.value !== 'none') {
+            later(() => {
                 resetChat();
                 nextTick(() => {
                     resetPosition();
@@ -856,19 +896,14 @@ onMounted(() => {
     observer.observe(parentElement, { attributes: true, attributeFilter: ['style'] });
 });
 
+onBeforeUnmount(() => {
+    audioPlayer.value?.removeEventListener('ended', playNextAudio);
+});
+
 onUnmounted(() => {
-    ChatBotStore.channel.off('ChatBotWidget#done');
-    ChatBotStore.channel.off('ChatBotWidget#stream');
-    ChatBotStore.channel.off('ChatBotWidget#ToEmitter');
-    ChatBotStore.channel.off('ChatBotWidget#userEmbeddings');
-    ChatBotStore.channel.off('ChatBotWidget#documentEmbeddings');
-    ChatBotStore.channel.off('ChatBotWidget#toolEmbeddings');
-    KokoroStore.channel.off('ChatBotWidget#ToEmitter');
-    KokoroStore.channel.off('ChatBotWidget#audioResp');
-    KokoroStore.channel.off('ChatBotWidget#AudioChunk');
-    KokoroStore.channel.off('ChatBotWidget#AudioChunkDone');
-    props.emitter.off("ChatBotWidget#loadChatBotModel");
-    props.emitter.off('ChatBotWidget#loadKokoroModel');
+    registered.forEach(([channel, event, handler]) => channel.off(event, handler));
+    timers.forEach((id) => clearTimeout(id));
+    timers.clear();
     if(observer){
         observer.disconnect();
     }

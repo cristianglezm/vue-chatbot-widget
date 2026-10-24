@@ -14,7 +14,7 @@ export default defineConfigWithVueTs(
   },
   {
     name: 'app/files-to-ignore',
-    ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**', 'packages/**'],
+    ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**', 'packages/**', '**/playwright-report/**', '**/test-results/**', '**/blob-report/**'],
   },
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,

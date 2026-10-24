@@ -10,10 +10,10 @@ export default defineConfig({
     dts({
       insertTypesEntry: true,
       outDir: 'dist/lib/types',
-      include: ["./src/**/*.ts", "./src/**/*.tsx", "./src/**/*.vue"],
+      include: ["./src/**/*.ts", "./src/**/*.tsx", "./src/**/*.vue", "./src/**/*.js"],
       cleanVueFileName: true,
       rollupTypes: true,
-      tsconfigPath: './tsconfig.json'
+      tsconfigPath: './tsconfig.app.json'
     }),
     cssInjectedByJsPlugin()
   ],
@@ -28,7 +28,7 @@ export default defineConfig({
   publicDir: 'public',
   base: './',
   build: {
-    emptyOutDir: false,
+    emptyOutDir: true,
     outDir: 'dist/lib',
     minify: true,
     target: 'esnext',

@@ -56,11 +56,18 @@ export class ChatBot{
                 env.allowLocalModels = false;
                 env.allowRemoteModels = true;
             }
-            this.instance = pipeline(this.task, this.modelOptions.model,
+            const instance = pipeline(this.task, this.modelOptions.model,
             {
                 dtype: this.modelOptions.dtype,
                 device: this.modelOptions.device === "CPU" ? "wasm":"webgpu",
                 progress_callback
+            });
+            this.instance = instance;
+            // a failed load must not stay cached as a rejected promise, the next call has to try again.
+            instance.catch(() => {
+                if(this.instance === instance){
+                    this.instance = null;
+                }
             });
         }
         return this.instance;
@@ -77,8 +84,13 @@ export class ChatBot{
      */
 	static async reset(){
 		if(this.hasModelLoaded()){
-			(await this.getInstance()).dispose();
-			this.instance = null;
+			try{
+				(await this.instance).dispose();
+			}catch(_){
+				// a load that failed has nothing to dispose.
+			}finally{
+				this.instance = null;
+			}
 		}
 	}
 };
@@ -87,47 +99,47 @@ export class ChatBot{
  * @param {String} rawInput - The raw text output from the chatbot.
  * @returns {Array<Object>} - A formatted output array containing role-based content.
  */
+/**
+ * @brief The template is used when there is one and something to put in it: tools, documents or both.
+ * What is missing is given to the template as an empty list: templates loop over `tools` and `documents`, null breaks them.
+ */
+const usesTemplate = (chat_template, tools, documents) => Boolean(chat_template && (tools || documents));
+
+/**
+ * @brief A rendered chat template (ChatML) as messages.
+ * With the special tokens each turn starts with `<|im_start|>role`, without them the role is alone on its line.
+ * The lines of a message are kept, a line that only starts with a role name is part of the message,
+ * what comes before any role is a user message and the empty turns (the generation prompt) are dropped.
+ */
 const formatToChatML = (rawInput) => {
-    const lines = rawInput.split("\n");
+    const isServerFormat = rawInput.includes("<|im_start|>");
+    const roleOf = (line) => {
+        if(isServerFormat){
+            return line.startsWith("<|im_start|>") ? line.replace("<|im_start|>", "").trim() : null;
+        }
+        const role = line.trim();
+        return (role === "system" || role === "user" || role === "assistant") ? role : null;
+    };
     const formattedOutput = [];
     let currentRole = null;
-    let currentContent = '';
-    const isServerFormat = rawInput.includes("<|im_start|>");
-
-    const extractRole = (line) => {
-        if(isServerFormat){
-            return line.replace("<|im_start|>", "").trim();
+    let lines = [];
+    const flush = () => {
+        const content = lines.join("\n").replace("<|im_end|>", "").trim();
+        if(content){
+            formattedOutput.push({ role: currentRole || 'user', content });
         }
-        return line.trim();
+        lines = [];
     };
-
-    const isRoleLine = (line) => {
-        if(isServerFormat){
-            return line.startsWith("<|im_start|>");
-        }
-        return line.startsWith("system") || line.startsWith("user") || line.startsWith("assistant");
-    };
-
-    lines.forEach(line => {
-        if(isRoleLine(line)){
-            if(currentContent){
-                formattedOutput.push({
-                    role: currentRole.trim(),
-                    content: currentContent.replace("<|im_end|>", "").trim(),
-                });
-            }
-            currentRole = extractRole(line);
-            currentContent = '';
+    rawInput.split("\n").forEach((line) => {
+        const role = roleOf(line);
+        if(role !== null){
+            flush();
+            currentRole = role;
         }else{
-            currentContent += ' ' + line.trim();
+            lines.push(line.trimEnd());
         }
     });
-    if (currentContent) {
-        formattedOutput.push({
-            role: currentRole.trim() || 'user',
-            content: currentContent.replace("<|im_end|>", "").trim(),
-        });
-    }
+    flush();
     return formattedOutput;
 };
 
@@ -141,12 +153,12 @@ const formatToChatML = (rawInput) => {
  */
 const injectSystemMessageWithToolsAndDocuments  = (messages, chat_template, tools, documents) => {
     let conversations = messages;
-    if (tools && documents && chat_template) {
+    if (usesTemplate(chat_template, tools, documents)) {
         const template = new Template(chat_template);
         conversations = formatToChatML(template.render({
             messages: messages,
-            tools: tools,
-            documents: documents,
+            tools: tools ?? [],
+            documents: documents ?? [],
             add_generation_prompt: true
         }));
     }
@@ -214,14 +226,14 @@ export const streamingChat = async (messages, callback, {tools = null, documents
         callback_function: callback
     });
     let conversations = messages;
-    if(tools && documents && chat_template){
+    if(usesTemplate(chat_template, tools, documents)){
         conversations = await chatbot.tokenizer.apply_chat_template(
             messages,
             {
                 chat_template: chat_template,
                 tokenize: false,
-                tools: tools,
-                documents: documents,
+                tools: tools ?? [],
+                documents: documents ?? [],
                 add_generation_prompt: true
             });
         const output = await chatbot(conversations, {
@@ -289,15 +301,15 @@ export const rChat = async (messages, { url= "http://localhost:8080", api_key = 
  */
 export const chat = async (messages, {tools = null, documents = null, chat_template = null}) => {
     let chatbot = await ChatBot.getInstance();
-    if(tools && documents && chat_template){
+    if(usesTemplate(chat_template, tools, documents)){
         const conversations = await chatbot.tokenizer.apply_chat_template(
             messages,
             {
                 chat_template: chat_template,
                 tokenize: false,
                 add_generation_prompt: true,
-                tools: tools,
-                documents: documents
+                tools: tools ?? [],
+                documents: documents ?? []
             });
         const output = await chatbot(conversations, {
             max_new_tokens: 256,

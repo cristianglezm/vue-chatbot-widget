@@ -113,23 +113,24 @@ const hasModelOptionsChanged = (modelOptions) => {
     return ((ChatBot.modelOptions.host !== modelOptions.host) ||
             (ChatBot.modelOptions.model !== modelOptions.model) ||
             (ChatBot.modelOptions.device !== modelOptions.device) ||
-            (ChatBot.modelOptions.dtpe !== modelOptions.dtype));
+            (ChatBot.modelOptions.dtype !== modelOptions.dtype));
 };
 /**
  * @brief Loads the model with the specified options. If the model options have changed, it resets the chatbot instance.
  *        This function also handles progress reporting and communication with the worker thread.
  * @param {Object} modelOptions - The new model options to use.
+ * @param {Boolean} [force=false] - Reset the model even if the options did not change, ie: its cache was deleted.
  * @param {String} modelOptions.host - The host URL or identifier.
  * @param {String} modelOptions.model - The model identifier.
  * @param {String} modelOptions.device - The device where the model will run (e.g., "CPU").
  * @param {String} modelOptions.dtype - The data type used by the model (e.g., "q4").
  */
-const loadModel = async (modelOptions) => {
-    if(hasModelOptionsChanged(modelOptions)){
+const loadModel = async (modelOptions, force = false) => {
+    if(force || hasModelOptionsChanged(modelOptions)){
         await ChatBot.reset();
     }
     ChatBot.setModelOptions(modelOptions);
-    ChatBot.getInstance((data) => {
+    const onProgress = (data) => {
         switch(data.status){
           case "initiate":{
               let event = {
@@ -158,16 +159,24 @@ const loadModel = async (modelOptions) => {
               });
           }
             break;
-          case "ready":{
-            self.postMessage({
-                jobType: "updateBtnTitle",
-                eventName: "ChatBotModelOptions#updateBtnTitle",
-                event: ""
-            });
-          }
-            break;
         }
-    });
+    };
+    try{
+        await ChatBot.getInstance(onProgress);
+        // transformers.js only reports "ready" while it loads, nothing is reported when the model was already loaded.
+        self.postMessage({
+            jobType: "updateBtnTitle",
+            eventName: "ChatBotModelOptions#updateBtnTitle",
+            event: ""
+        });
+    }finally{
+        // the modal also has to close when the load failed, the error itself is reported by the caller.
+        self.postMessage({
+            jobType: "updateProgressBar",
+            eventName: "ChatBotWidget#requestMultiProgressBar",
+            event: { status: "finish" }
+        });
+    }
 }
 const rStreaming = async (e) => {
     const messages = e.data.messages;
@@ -269,7 +278,7 @@ self.onmessage = async (e) => {
     switch(jobType){
         case "loadModel":{
           try{
-            loadModel(e.data.modelOptions);
+            await loadModel(e.data.modelOptions, e.data.force);
           }catch(e){
             self.postMessage({
               jobType: "error",
