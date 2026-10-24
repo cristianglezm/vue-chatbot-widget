@@ -1,100 +1,36 @@
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
-import dts from 'vite-plugin-dts';
-import path from 'path';
-import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
+import path from 'node:path'
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
+// @ts-expect-error vite-plugin-eslint ships no types for ESM
+import eslint from 'vite-plugin-eslint';
 
-export default defineConfig({
+const widgetSrc = path.resolve(__dirname, 'packages/@cristianglezm/vue-chatbot-widget/src/main.ts');
+
+export default defineConfig(({ command }) => ({
   plugins: [
-    vue(), 
-    dts({
-      insertTypesEntry: true,
-      outDir: 'dist/lib/types',
-      include: ["./src/**/*.ts", "./src/**/*.tsx", "./src/**/*.vue"],
-      cleanVueFileName: true,
-      rollupTypes: true,
-      tsconfigPath: './tsconfig.json'
-    }),
-    cssInjectedByJsPlugin()
+    vue(),
+    vueDevTools(),
+    eslint()
   ],
-  resolve:{
+  resolve: {
     alias: {
-        "@": path.resolve(__dirname, './src'),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // dev server: use the widget sources (HMR, no need to rebuild the lib).
+      // build: use the built package through the workspace link, so the demo
+      // exercises the same files that are published.
+      ...(command === 'serve' ? { '@cristianglezm/vue-chatbot-widget': widgetSrc } : {}),
     },
+    // one copy of vue / pinia / mitt no matter who imports them.
+    dedupe: ['vue', 'pinia', 'mitt'],
+  },
+  build: {
+    chunkSizeWarningLimit: 3500,
+    minify: false, // this is needed to show the code to the user in <code>.
+    outDir: 'dist',
   },
   esbuild:{
     legalComments: 'inline',
-  },
-  publicDir: 'public',
-  base: './',
-  worker:{
-    format: 'es',
-    rollupOptions: {
-      treeshake: true,
-      external: [
-//        '@huggingface/inference',
-//        '@huggingface/jinja',
-//        '@huggingface/transformers',
-//        'kokoro-js',
-//        'onnxruntime-node',
-//        'onnxruntime-web',
-      ],
-      output: {
-        exports: 'named',
-        assetFileNames: 'assets/[name].[hash].[ext]',
-        globals:{
-//          '@huggingface/inference':'HuggingFaceInference',
-//          '@huggingface/jinja':'HuggingFaceJinja',
-//          '@huggingface/transformers':'HuggingFaceTranformers',
-//          'kokoro-js':'KokoroJs',
-//          'onnxruntime-node':'onnxruntimeNode',
-//          'onnxruntime-web':'onnxruntimeWeb',
-        }
-      }
-    }
-  },
-  build: {
-    emptyOutDir: false,
-    outDir: 'dist/lib',
-    minify: true,
-    target: 'esnext',
-    sourcemap: true,
-    lib: {
-      entry: ['./src/main.ts'],
-      formats: ['es', 'cjs', 'umd'],
-      name: 'vue-chatbot-widget',
-      fileName: (format) => `vue-chatbot-widget.${format}.js`
-    },
-    rollupOptions: {
-      treeshake: true,
-      external: [
-        'vue', 
-        '@huggingface/inference', 
-        '@huggingface/jinja', 
-        '@huggingface/transformers', 
-        'kokoro-js', 
-        'onnxruntime-node',
-        'onnxruntime-web',
-        'waveform-data', 
-        'mitt',
-        'pinia'
-      ],
-      output: {
-        exports: 'named',
-        assetFileNames: 'assets/[name].[hash].[ext]',
-        globals:{
-            'vue':'Vue',
-            '@huggingface/inference':'HuggingFaceInference',
-            '@huggingface/jinja':'HuggingFaceJinja',
-            '@huggingface/transformers':'HuggingFaceTranformers',
-            'kokoro-js':'KokoroJs',
-            'onnxruntime-node':'OnnxruntimeNode',
-            'onnxruntime-web':'OnnxruntimeWeb',
-            'waveform-data':'WaveformData',
-            'mitt':'Mitt',
-            'pinia':'Pinia',
-        }
-      }
-    }
   }
-});
+}));

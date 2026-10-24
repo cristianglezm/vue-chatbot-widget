@@ -1,17 +1,16 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 NPM_TOKEN=$1
 GH_TOKEN=$2
 
 echo "@cristianglezm:registry=https://registry.npmjs.org" > .npmrc
 echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
-npm publish --access public
+npm publish -w @cristianglezm/vue-chatbot-widget --access public
 sleep 10s
 echo "@cristianglezm:registry=https://npm.pkg.github.com" > .npmrc
 echo "//npm.pkg.github.com/:_authToken=\${GH_TOKEN}" >> .npmrc
-npm publish --access public
+npm publish -w @cristianglezm/vue-chatbot-widget --access public
 sleep 5s
 rm .npmrc
-
