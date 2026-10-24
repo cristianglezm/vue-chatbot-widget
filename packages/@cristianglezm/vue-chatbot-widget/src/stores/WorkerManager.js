@@ -5,7 +5,30 @@ export default class WorkerManager{
      */
     constructor(channel){
         this.workers = new Map();
+        this.factories = new Map();
         this.channel = channel;
+    }
+    /**
+     * @brief Registers how to build a worker. The worker is created lazily, on the first request sent to it.
+     * @param name {String} The unique name used to identify the worker.
+     * @param factory {Function} Function that returns a new Worker, ie: () => new MyWorker()
+     */
+    registerFactory(name, factory){
+        if(typeof factory !== 'function'){
+            throw new TypeError(`The factory of worker "${name}" must be a function that returns a Worker, ie: () => new MyWorker()`);
+        }
+        this.factories.set(name, factory);
+    }
+    /**
+     * @brief Returns the worker, building it with its factory if it does not exist yet.
+     * @param name {String} The name of the worker.
+     * @returns {Worker|undefined} The worker, or undefined if it is not added and has no factory.
+     */
+    ensureWorker(name){
+        if(!this.workers.has(name) && this.factories.has(name)){
+            this.addWorker(name, this.factories.get(name)());
+        }
+        return this.workers.get(name);
     }
     /**
      * @brief Adds a worker to the manager and sets up message/error handlers.
@@ -50,11 +73,13 @@ export default class WorkerManager{
      * @param data {Object} The data object to send to the worker.
      */
     sendRequest(name, data){
-        const worker = this.workers.get(name);
+        const worker = this.ensureWorker(name);
         if(worker){
             worker.postMessage(data);
         }else{
-            console.error(`Worker ${name} not found`);
+            const message = `Worker "${name}" is not available, pass it in the plugin options: { workers: { ${name}: () => new MyWorker() } }`;
+            console.error(message);
+            this.channel.emit(name + '#onerror', message);
         }
     }
     /**

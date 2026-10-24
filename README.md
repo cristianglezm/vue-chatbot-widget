@@ -32,6 +32,7 @@ npm install
 
 npm run dev           # demo with the widget served from its sources (HMR)
 npm run dev:widget    # (optional, other terminal) rebuild the widget on change
+npm run test:widget   # unit tests (vitest)
 
 npm run build:widget  # build only the library
 npm run build         # library + type-check + demo
@@ -41,4 +42,4 @@ npm run lint:widget   # library
 
 `npm run dev` resolves `@cristianglezm/vue-chatbot-widget` to the package sources; `npm run build` uses the
 built package (`dist/lib`) through the workspace link, so the demo is built with what gets published.
-Building the library bundles two large workers and needs about 4 GB of RAM.
+The widget does not bundle its workers, the demo's bundler builds them (see `src/main.ts`).

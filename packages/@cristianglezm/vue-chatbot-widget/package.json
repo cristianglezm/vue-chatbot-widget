@@ -29,7 +29,8 @@
       "require": "./dist/lib/vue-chatbot-widget.umd.js"
     },
     "./assets/*": "./dist/lib/assets/*",
-    "./workers/*": "./src/workers/*"
+    "./workers/*.js": "./src/workers/*.js",
+    "./workers/*": "./src/workers/*.js"
   },
   "sideEffects": [
     "*.vue"

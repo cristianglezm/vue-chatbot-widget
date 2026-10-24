@@ -15,13 +15,14 @@ export default defineConfig(({ command }) => ({
     eslint()
   ],
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    alias: [
+      { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
       // dev server: use the widget sources (HMR, no need to rebuild the lib).
       // build: use the built package through the workspace link, so the demo
       // exercises the same files that are published.
-      ...(command === 'serve' ? { '@cristianglezm/vue-chatbot-widget': widgetSrc } : {}),
-    },
+      // Exact match only: '@cristianglezm/vue-chatbot-widget/workers/*' has to keep resolving through the package exports.
+      ...(command === 'serve' ? [{ find: /^@cristianglezm\/vue-chatbot-widget$/, replacement: widgetSrc }] : []),
+    ],
     // one copy of vue / pinia / mitt no matter who imports them.
     dedupe: ['vue', 'pinia', 'mitt'],
   },

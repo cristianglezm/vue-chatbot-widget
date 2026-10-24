@@ -25,9 +25,6 @@ jobs:
         env:
             NPM_TOKEN: ${{secrets.NPM_TOKEN}}
             GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-            CHATBOT_WORKER_URL: ${{ secrets.CHATBOT_WORKER_URL }}
-            KOKORO_WORKER_URL: ${{ secrets.KOKORO_WORKER_URL }}
         run: |
           bash .devops/build_dist_lib.sh
-          bash .devops/replaceWorkers.sh "$CHATBOT_WORKER_URL" "$KOKORO_WORKER_URL"
           bash .devops/publish.sh "$NPM_TOKEN" "$GH_TOKEN"

@@ -1,14 +1,12 @@
 import mitt from 'mitt';
 import { defineStore } from 'pinia';
 import WorkerManager from '../WorkerManager';
-import kokoro from '../../workers/kokoro.worker?worker';
 import { toRaw } from 'vue';
 import { useErrorStore } from '../ErrorStore';
 import { RawAudio } from '@huggingface/transformers';
 
 let channel = new mitt();
 const wm = new WorkerManager(channel);
-wm.addWorker('kokoro', new kokoro());
 wm.onError('kokoro', (e) => {
     const ErrorStore = useErrorStore();
     ErrorStore.push(e);
@@ -107,6 +105,13 @@ export const useKokoroStore = defineStore('KokoroStore', {
         }
     },
     actions: {
+        /**
+         * @brief Tells the store how to build its worker (it is created on the first request).
+         * @param factory {Function} () => new Worker, ie: () => new KokoroWorker()
+         */
+        registerWorker(factory){
+            this.wm.registerFactory('kokoro', factory);
+        },
         async addAudio(text, audio){
             let hash = await hashText(text);
             this.audios.set(hash, audio);

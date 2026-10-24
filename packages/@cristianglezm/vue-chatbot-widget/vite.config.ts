@@ -27,32 +27,6 @@ export default defineConfig({
   },
   publicDir: 'public',
   base: './',
-  worker:{
-    format: 'es',
-    rollupOptions: {
-      treeshake: true,
-      external: [
-//        '@huggingface/inference',
-//        '@huggingface/jinja',
-//        '@huggingface/transformers',
-//        'kokoro-js',
-//        'onnxruntime-node',
-//        'onnxruntime-web',
-      ],
-      output: {
-        exports: 'named',
-        assetFileNames: 'assets/[name].[hash].[ext]',
-        globals:{
-//          '@huggingface/inference':'HuggingFaceInference',
-//          '@huggingface/jinja':'HuggingFaceJinja',
-//          '@huggingface/transformers':'HuggingFaceTranformers',
-//          'kokoro-js':'KokoroJs',
-//          'onnxruntime-node':'onnxruntimeNode',
-//          'onnxruntime-web':'onnxruntimeWeb',
-        }
-      }
-    }
-  },
   build: {
     emptyOutDir: false,
     outDir: 'dist/lib',

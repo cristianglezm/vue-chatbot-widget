@@ -16,8 +16,8 @@ import { useErrorStore } from './stores/ErrorStore';
 import { useKokoroStore } from './stores/KokoroStore';
 import { useVectorStore } from './stores/vectorStore';
 
-import ChatBotWorker from './workers/chatbot.worker?worker';
-import KokoroWorker from './workers/kokoro.worker?worker';
+import { initStores } from './plugin';
+import type { ChatBotPluginOptions, ChatBotWorkers, WorkerFactory } from './plugin';
 
 export {
   ChatBotWidget,
@@ -36,35 +36,19 @@ export {
   useErrorStore,
   useKokoroStore,
   useVectorStore,
-  ChatBotWorker,
-  KokoroWorker,
+  initStores,
 };
+export type { ChatBotPluginOptions, ChatBotWorkers, WorkerFactory };
 
 import { createPinia } from 'pinia';
 
-interface ChatBotPluginOptions{
-    pinia: ReturnType<typeof createPinia>;
-};
-export const initStores = (options: ChatBotPluginOptions ) => {
-        if(!options.pinia){
-            options.pinia = createPinia();
-        }
-        // @ts-ignore
-        useErrorStore(options.pinia);
-        // @ts-ignore
-        useChatBotStore(options.pinia);
-        // @ts-ignore
-        useVectorStore(options.pinia);
-        // @ts-ignore
-        useKokoroStore(options.pinia);
-};
 const ChatBotPlugin = {
-    install(app: any, options: ChatBotPluginOptions ){
+    install(app: any, options: ChatBotPluginOptions = {}){
         if(!options.pinia){
             options.pinia = createPinia();
         }
         app.use(options.pinia);
-        initStores({ pinia: options.pinia });
+        initStores(options);
 
         app.component('ChatBotWidget', ChatBotWidget);
         app.component('AudioPlayer', AudioPlayer);
