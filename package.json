@@ -22,11 +22,12 @@
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "lint:widget": "npm run lint -w @cristianglezm/vue-chatbot-widget",
+    "test": "npm run test:widget && npm run test:e2e",
     "test:widget": "npm run test -w @cristianglezm/vue-chatbot-widget",
-    "format": "prettier --write src/",
-    "clean": "rm -rf dist && npm run clean -w @cristianglezm/vue-chatbot-widget",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "format": "prettier --write src/",
+    "clean": "rm -rf dist && npm run clean -w @cristianglezm/vue-chatbot-widget",
     "show": "playwright show-report"
   },
   "dependencies": {
