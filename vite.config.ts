@@ -32,8 +32,6 @@ export default defineConfig(({ command }) => ({
     chunkSizeWarningLimit: 3500,
     minify: false, // this is needed to show the code to the user in <code>.
     outDir: 'dist',
-  },
-  esbuild:{
-    legalComments: 'inline',
+    license: true,
   }
 }));

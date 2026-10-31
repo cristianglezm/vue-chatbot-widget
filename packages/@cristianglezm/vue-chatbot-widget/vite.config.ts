@@ -22,17 +22,15 @@ export default defineConfig({
         "@": path.resolve(import.meta.dirname, './src'),
     },
   },
-  esbuild:{
-    legalComments: 'inline',
-  },
   publicDir: 'public',
   base: './',
   build: {
     emptyOutDir: true,
     outDir: 'dist/lib',
-    minify: true,
+    minify: 'oxc',
     target: 'esnext',
     sourcemap: true,
+    license: true,
     lib: {
       entry: ['./src/main.ts'],
       formats: ['es', 'cjs', 'umd'],
