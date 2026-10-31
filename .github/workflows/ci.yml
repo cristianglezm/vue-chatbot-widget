@@ -19,7 +19,7 @@ jobs:
       - name: compare package.json versions
         run: |
           sudo apt-get update && sudo apt-get install jq -y
-          bash .devops/compare_versions.sh "package.json" "packages/@cristianglezm/vue-chatbot-widget/package.json"
+          bash .devops/compare_packages.sh "package.json" "packages/@cristianglezm/vue-chatbot-widget/package.json"
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
