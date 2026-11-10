@@ -1,0 +1,193 @@
+
+@font-face{
+  font-family: 'MonaspaceRadon-Regular';
+  src: url('/vue-chatbot-widget/assets/MonaspaceRadon-Regular-Cw0M9OPw.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+:root {
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  font-family: MonaspaceRadon-Regular, Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background-color: green;
+  color: lightgreen;
+  scrollbar-color: lightgreen rgb(47, 50, 52);
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: lightgreen;
+    background-color: green;
+  }
+}
+/**
+ * prism.js tomorrow night eighties for JavaScript, CoffeeScript, CSS and HTML
+ * Based on https://github.com/chriskempson/tomorrow-theme
+ * @author Rose Pritchard
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #ccc;
+	background: none;
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #2d2d2d;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.block-comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #999;
+}
+
+.token.punctuation {
+	color: #ccc;
+}
+
+.token.tag,
+.token.attr-name,
+.token.namespace,
+.token.deleted {
+	color: #e2777a;
+}
+
+.token.function-name {
+	color: #6196cc;
+}
+
+.token.boolean,
+.token.number,
+.token.function {
+	color: #f08d49;
+}
+
+.token.property,
+.token.class-name,
+.token.constant,
+.token.symbol {
+	color: #f8c555;
+}
+
+.token.selector,
+.token.important,
+.token.atrule,
+.token.keyword,
+.token.builtin {
+	color: #cc99cd;
+}
+
+.token.string,
+.token.char,
+.token.attr-value,
+.token.regex,
+.token.variable {
+	color: #7ec699;
+}
+
+.token.operator,
+.token.entity,
+.token.url {
+	color: #67cdcc;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+
+.token.inserted {
+	color: green;
+}
+
+html{
+        font-family: 'MonaspaceRadon-Regular', Arial, Helvetica, sans-serif;
+        background-color: green !important;
+        color: lightgreen;
+        scrollbar-color: lightgreen rgb(47, 50, 52);
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+}
+pre{
+        background-color: rgb(47, 50, 52);
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid lightgreen;
+        overflow-x: auto;
+        font-size: 14px;
+        line-height: 1.6;
+        margin: 16px 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+}
+code{
+        background-color: rgb(47, 50, 52);
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 14px;
+        white-space: pre;
+}
+
+.safe-button[data-v-436f676c]{
+        background-color: green;
+        color: lightgreen;
+        border: solid 1px lightgreen;
+        border-radius: 10px;
+        box-shadow: 1px 2px 3px 4px rgb(0, 0, 0, 0.6);
+}
+.safe-button[data-v-436f676c]:hover{
+        background-color: lightgreen;
+        color: green;
+        cursor: pointer;
+}
+.safe-button[data-v-436f676c]:disabled{
+        cursor: not-allowed !important;
+}
