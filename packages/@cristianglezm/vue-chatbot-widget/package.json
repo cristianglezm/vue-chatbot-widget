@@ -55,7 +55,7 @@
     "test:shuffle": "vitest run --sequence.shuffle.files --sequence.shuffle.tests"
   },
   "dependencies": {
-    "@huggingface/inference": "^4.13.28",
+    "@huggingface/inference": "^4.13.33",
     "@huggingface/jinja": "^0.5.11",
     "@huggingface/transformers": "^3.8.1",
     "kokoro-js": "^1.2.1",
